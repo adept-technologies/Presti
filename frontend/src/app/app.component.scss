@@ -24,7 +24,7 @@ button {
   padding: 0.5rem 1rem;
   border: none;
   background-color: #1976d2;
-  color: white;
+  color: var(--text-primary);
   border-radius: 4px;
   cursor: pointer;
 }
@@ -67,7 +67,7 @@ li {
   //transition: color 0.3s ease, transform 0.2s ease;
 
   //&:hover {
-    //color: var(--color-yellow);
+    //color: var(--text-primary);
     //transform: scale(1.1);
   //}
 

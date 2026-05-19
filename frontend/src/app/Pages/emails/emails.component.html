@@ -4,21 +4,21 @@
 <div *ngIf="!loading && emails.length" class="emails-container">
   <div *ngFor="let e of emails" class="email-box">
     <div class="email-recipient">
-        <p style="font-weight: bold; color: var(--color-yellow)">Name: </p>
+        <p style="font-weight: bold; color: var(--text-primary)">Name: </p>
         {{(e.first_name + ' ' + e.last_name) }}
     </div>
     <div class="email-date">
-        <p style="font-weight: bold; color: var(--color-yellow)">Sent At: </p>
+        <p style="font-weight: bold; color: var(--text-primary)">Sent At: </p>
         {{ e.sent_at || 'N/A'}}
     </div>
 
     <div class="email-subject">
-        <p style="font-weight: bold; color: var(--color-yellow)">Subject: </p>
+        <p style="font-weight: bold; color: var(--text-primary)">Subject: </p>
         {{ e.subject || '(no subject)' }}
     </div>
 
     <div class="email-body">
-        <p style="font-weight: bold; color: var(--color-yellow)">Body: </p>
+        <p style="font-weight: bold; color: var(--text-primary)">Body: </p>
     {{ $any(e).plainBody || e.body || 'No body available' }}
     </div>
   </div>

@@ -1,6 +1,6 @@
 .leads-component {
-  color: var(--color-yellow);
-  border: 2px solid #f9f9f9;
+  color: var(--text-primary);
+  border: 2px solid var(--border-color, #f9f9f9);
 
   .lead-table {
   width: 100%;
@@ -41,15 +41,17 @@
       th:nth-child(9), td:nth-child(9) { width: 120px; } /* Contact Status */
 
       th {
-        background-color: var(--color-black);
+        background-color: var(--bg-table, var(--color-black));
         position: sticky;
         top: 0;
-        border-bottom: 1px solid #ccc;
+        border-bottom: 1px solid var(--table-border, #ccc);
+        color: var(--text-primary);
       }
 
       td {
-        background-color: var(--color-black);
-        border-top: 1px solid #ccc;
+        background-color: var(--table-row-bg, var(--color-black));
+        border-top: 1px solid var(--table-border, #ccc);
+        color: var(--text-primary);
         }
 
       tbody tr{
@@ -62,7 +64,7 @@
       }
 
       tbody tr:hover{
-        background-color: var(--color-yellow);
+        background-color: var(--text-primary);
         color: var(--color-green);
         cursor: pointer;
       }
@@ -77,7 +79,7 @@
     font-family: var(--font-family-base);
     font-weight: var(--font-weight-header);
     font-size: var(--font-size-header);
-    color: var(--color-yellow);
+    color: var(--text-primary);
     box-sizing: border-box;
   }
 
@@ -88,7 +90,7 @@
 }
 
 thead tr th{
-  color: white;
+  color: var(--text-primary);
 }
 
 .btn{
@@ -134,7 +136,7 @@ thead tr th{
     display: flex;
     align-items: center;
     gap: 10px;
-    color: white;
+    color: var(--text-primary);
     font-size: 0.9rem;
     cursor: pointer;
     transition: background-color 0.2s;
@@ -147,7 +149,7 @@ thead tr th{
       cursor: pointer;
       width: 16px;
       height: 16px;
-      accent-color: var(--color-yellow);
+      accent-color: var(--text-primary);
     }
 
     span {
@@ -175,22 +177,22 @@ thead tr th{
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--color-blue);
+  color: #000000;
   display: inline-block;
 
-  &.replied { background: #22c55e; color: black; }
-  &.engaged { background: #3b82f6; color: white; }
-  &.opened { background: #a855f7; color: white; } /* Purple for opened */
-  &.contacted { background: #64748b; color: white; }
-  &.pending { background: #facc15; color: black; }
-  &.failed { background: #ef4444; color: white; }
-  &.opted_out { background: #4b5563; color: white; }
+  &.replied { background: #22c55e; color: #000000; }
+  &.engaged { background: #3b82f6; color: #000000; }
+  &.opened { background: #a855f7; color: #000000; } /* Purple for opened */
+  &.contacted { background: #06b6d4; color: #000000; } /* Cyan instead of grey */
+  &.pending { background: #facc15; color: #000000; }
+  &.failed { background: #ef4444; color: #000000; }
+  &.opted_out { background: #ec4899; color: #000000; } /* Pink instead of grey */
 }
 
 .no-email-tag {
   background-color: var(--color-red);
-  color: white;
+  color: var(--text-primary);
   font-size: 0.65rem;
   font-weight: 700;
   padding: 2px 6px;

@@ -1,6 +1,6 @@
 <div *ngIf="companyDetails; else noData" class="company-details-component">
   <div class="company-header">
-    <h2 style="color: var(--color-yellow); display: flex; gap: 2rem;">
+    <h2 style="color: var(--text-primary); display: flex; gap: 2rem;">
       {{ companyDetails.name }}
       <app-button [buttonText]="'VIEW EMAILS SENT'" [icon]="'visibility'" [routerLink]="['/emails', companyDetails.id]">
       </app-button>
@@ -10,11 +10,11 @@
 
   <div class="company-sections-grid">
     <div *ngFor="let section of companySections" class="company-section">
-      <h3 style="color: var(--color-yellow)">{{ section.title }}</h3>
+      <h3 style="color: var(--text-primary)">{{ section.title }}</h3>
       <mat-card>
         <mat-card-content>
           <div *ngFor="let entry of section.entries" style="line-height: 1.5em;">
-            <strong style="color: var(--color-yellow);">{{ entry.key }}:</strong>
+            <strong style="color: var(--text-primary);">{{ entry.key }}:</strong>
 
             <ng-container *ngIf="isLink(entry.value)">
               <a [href]="entry.value" class="link-truncate">
@@ -51,6 +51,6 @@
 </div>
 
 <ng-template #noData>
-  <p style="color: var(--color-yellow);"></p>
+  <p style="color: var(--text-primary);"></p>
   <app-loader></app-loader>
 </ng-template>

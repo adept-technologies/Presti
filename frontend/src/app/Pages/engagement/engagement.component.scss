@@ -8,7 +8,7 @@
 .chart-card {
   background: #111827; // dark theme
   padding: 16px;
-  color: var(--color-white);
+  color: var(--text-primary);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
   min-height: 300px;
   display: flex;
@@ -17,7 +17,7 @@
 
   h3 {
     font-size: var(--font-size-header);
-    color: var(--color-yellow);
+    color: var(--text-primary);
     font-weight: var(--font-weight-header);
   }
 
@@ -48,7 +48,7 @@
 }
 
 .kpi-card {
-  color: var(--color-yellow);
+  color: var(--text-primary);
   padding: 1rem;
   text-align: center;
   font-weight: bold;
@@ -57,9 +57,9 @@
 }
 
 .activity-card{
-    color:var(--color-yellow);
+    color: var(--text-primary);
     background: #111827; // dark theme
   padding: 16px;
   flex-direction: column;
   justify-content: space-between;
-}
+}
