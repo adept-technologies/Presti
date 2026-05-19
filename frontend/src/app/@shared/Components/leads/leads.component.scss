@@ -4,6 +4,7 @@
 
   .lead-table {
   width: 100%;
+  overflow-x: auto;
 }
 
 .lead-table.preview {
@@ -30,15 +31,16 @@
         text-align: left;
         position: sticky;
       }
-
       /* Minimize specific columns */
-      th:nth-child(1), td:nth-child(1) { width: 80px; text-align: center; } /* ID */
-      th:nth-child(2), td:nth-child(2) { width: 200px; } /* Company Name */
+      th:nth-child(1), td:nth-child(1) { width: 60px; text-align: center; } /* ID */
+      th:nth-child(2), td:nth-child(2) { width: 180px; } /* Company Name */
       th:nth-child(3), td:nth-child(3) { width: 100px; } /* Status */
+      th:nth-child(4), td:nth-child(4) { width: 120px; } /* Date Updated */
       th:nth-child(5), td:nth-child(5) { width: 80px; }  /* ICP Score */
       th:nth-child(6), td:nth-child(6) { width: 100px; } /* Source */
-      th:nth-child(7), td:nth-child(7) { width: 300px; } /* Industry */
-      th:nth-child(9), td:nth-child(9) { width: 120px; } /* Contact Status */
+      th:nth-child(7), td:nth-child(7) { width: 220px; } /* Industry */
+      th:nth-child(8), td:nth-child(8) { width: 130px; } /* Contact Status */
+      th:nth-child(9), td:nth-child(9) { width: 160px; } /* Action */
 
       th {
         background-color: var(--bg-table, var(--color-black));
@@ -121,8 +123,8 @@ thead tr th{
   position: absolute;
   top: 100%;
   right: 0;
-  z-index: 10000; /* Extremely high to clear all table rows */
   background-color: var(--color-black);
+  background-color: var(--bg-popup);
   border: 1px solid var(--color-yellow);
   border-radius: 4px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6); /* Deeper shadow for depth */
@@ -136,7 +138,7 @@ thead tr th{
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--text-primary);
+    color: var(--text-popup);
     font-size: 0.9rem;
     cursor: pointer;
     transition: background-color 0.2s;
@@ -149,7 +151,7 @@ thead tr th{
       cursor: pointer;
       width: 16px;
       height: 16px;
-      accent-color: var(--text-primary);
+      accent-color: var(--text-popup);
     }
 
     span {
