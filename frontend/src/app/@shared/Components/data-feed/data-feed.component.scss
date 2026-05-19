@@ -18,7 +18,7 @@
     font-family: var(--font-family-base);
     font-weight: var(--font-weight-header);
     font-size: var(--font-size-header);
-    color: var(--color-yellow);
+    color: var(--text-primary);
     box-sizing: border-box;
 }
 
@@ -29,12 +29,12 @@
     font-family: var(--font-family-base);
     font-weight: var(--font-weight-base);
     font-size: var(--font-size-header);
-    color: var(--color-yellow);
+    color: var(--text-primary);
     box-sizing: border-box;
 
     &:hover{
         color: var(--color-black);
-        background-color: var(--color-yellow);
+        background-color: var(--text-primary);
         cursor: pointer;
     }
 }

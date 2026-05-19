@@ -9,25 +9,25 @@
 .search-bar{
     background: none;
     border:none;
-    color: var(--color-white);
-    border: 1px solid #f9f9f9;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
 }
 
 input{
     font-family: var(--font-family-base);
     font-weight: var(--font-weight-base);
     font-size: var(--font-size-header);
-    color: var(--color-white);
+    color: var(--text-primary);
 }
 
 ::ng-deep input::placeholder {
     font-family: var(--font-family-base);
     font-weight: var(--font-weight-base);
     font-size: var(--font-size-header);
-    color: var(--color-white);
+    color: var(--text-primary);
 }
 
 .search-field{
-    background-color: white;
+    background-color: var(--text-primary);
 }
 
