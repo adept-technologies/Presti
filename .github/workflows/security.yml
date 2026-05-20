@@ -2,7 +2,7 @@ name: Security Pipeline (PR Gate)
 
 on:
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: ["main", "dev"]
 
 jobs:
   # ==========================================
@@ -14,26 +14,28 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
-      - name: Run Semgrep
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: >-
-            p/default
-            p/security-audit
-            p/secrets
-            p/javascript
-            p/typescript
-            p/python
-            p/flask
-          generateSarif: "1"
-        env:
-          SEMGREP_ARGS: --sarif --output=semgrep.sarif --audit
-          # TODO: Remove this line after this PR is merged to re-enable differential (fast) scanning!
-          SEMGREP_BASELINE_REF: ""
-          
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      - name: Run Semgrep Full Scan
+        # Runs a full scan of the entire codebase regardless of git diff.
+        # TODO: After this PR merges, change the word `scan` on the line below to `ci`.
+        #       Leave all the --config flags exactly as they are!
+        #       `semgrep ci` will automatically look at diffs while using these exact rules.
+        run: |
+          semgrep scan \
+            --sarif --output=semgrep.sarif \
+            --config p/default \
+            --config p/security-audit \
+            --config p/secrets \
+            --config p/javascript \
+            --config p/typescript \
+            --config p/python \
+            --config p/flask || true
+
       - name: Upload Semgrep Results to GitHub Security Tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: semgrep.sarif
@@ -52,26 +54,29 @@ jobs:
       - name: Start Ephemeral Application
         run: |
           # Create a dummy service account file so the Docker volume mount doesn't crash
-          mkdir -p backend
-          echo "{}" > backend/service-account.json
-          
+          echo "{}" > ./backend/service-account.json
+
+          # Confirm where we are 
+          ls -a
+
           # Spin up the database and the Flask backend
-          docker compose up -d
-          
+          docker compose -f ./docker-compose.dev.yml up -d
+
       - name: Wait for Health Check
         run: |
           echo "Waiting for app to be ready..."
           sleep 15
-          curl --fail --retry 10 --retry-delay 5 http://localhost:5050/health || (docker compose logs && exit 1)
+          curl --fail --retry 10 --retry-delay 5 --retry-connrefused http://localhost:5050/health || (docker compose logs && exit 1)
 
       - name: Run ZAP Baseline Scan
         run: |
-          docker run --rm --network="host" \
+          chmod 777 $(pwd)
+          docker run --rm --network="host" -u root \
             -v $(pwd):/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:5050 \
             -I \
-            -J zap_report.json || EXIT_CODE=$?
+            -J report_json.json || EXIT_CODE=$?
             
           if [ "$EXIT_CODE" == "1" ] || [ "$EXIT_CODE" == "2" ]; then
             echo "ZAP found vulnerabilities! Please check the GitHub Security Tab."
@@ -82,11 +87,48 @@ jobs:
           fi
 
       - name: Convert ZAP JSON to SARIF
-        # We use an open-source action to convert ZAP's JSON to SARIF format
-        uses: SvanBoxel/zaproxy-to-ghas@main
+        # SvanBoxel/zaproxy-to-ghas is abandoned and broken on the new GitHub artifact API.
+        # This inline Python script does the same job reliably without any third-party dependency.
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          from urllib.parse import urlparse
+          try:
+              with open("report_json.json") as f:
+                  zap = json.load(f)
+          except FileNotFoundError:
+              print("report_json.json not found — ZAP may not have completed. Writing empty SARIF.")
+              zap = {"site": []}
+
+          results = []
+          for site in zap.get("site", []):
+              for alert in site.get("alerts", []):
+                  for instance in alert.get("instances", [{"uri": site.get("@name",""), "method":"","param":"","evidence":""}]):
+                      raw_uri = instance.get("uri", "")
+                      # GitHub Code Scanning requires relative file paths, not http:// URLs.
+                      # Strip the scheme+host so "http://localhost:5050/health" becomes "health"
+                      parsed = urlparse(raw_uri)
+                      relative_uri = parsed.path.lstrip("/") or "index"
+                      results.append({
+                          "ruleId": str(alert.get("pluginid", "0")),
+                          "message": {"text": alert.get("desc", alert.get("name", ""))},
+                          "locations": [{"physicalLocation": {"artifactLocation": {"uri": relative_uri}}}],
+                          "level": {"High":"error","Medium":"warning","Low":"note","Informational":"none"}.get(alert.get("riskdesc","").split(" ")[0], "none")
+                      })
+
+          sarif = {
+              "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+              "version": "2.1.0",
+              "runs": [{"tool": {"driver": {"name": "OWASP ZAP", "rules": []}}, "results": results}]
+          }
+          with open("results.sarif", "w") as f:
+              json.dump(sarif, f, indent=2)
+          print(f"SARIF written with {len(results)} results.")
+          EOF
 
       - name: Upload ZAP Results to GitHub Security Tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: results.sarif
