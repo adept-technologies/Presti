@@ -23,25 +23,24 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 #The Database in use
-DB_URL = os.getenv("MOCK_DATABASE_URL")
+DB_URL = os.getenv("PROD_DATABASE_URL")
 
 #Create quart App
 app = Quart(__name__, static_folder="static", static_url_path="")
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=False,
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE="Strict",
 )
 app.logger.handlers = [] #Remove quart's default logging
 app.logger.propagate = True #Use our configured logger
 app = cors(
     app,
-    allow_origin=["http://localhost:4200", "http://192.168.1.250"],
+    allow_origin=["http://20.121.43.237", "http://lead-gen.adept-techno.co.ke", "https://lead-gen.adept-techno.co.ke"],
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     allow_credentials=True
 )
-
 #=================================APIs=======================================
 
 # ============================================================================
@@ -69,7 +68,6 @@ def debug():
 # =============================================================================
 health = HealthCheck()
 app.add_url_rule('/health', 'health', view_func=lambda: health.run())
-
 
 @app.route('/find-missing-people', methods=["GET", "POST"])
 async def get_missing_people():
@@ -108,6 +106,7 @@ async def trigger_outreach():
         logger.error(f"Failed to run outreach: {str(e)}")
         return jsonify({"Error": str(e)}), 500
 
+# For when the scoring algorithm changes
 @app.route('/rescore-all', methods=["POST"])
 async def rescore_all():
     logger.info("Manual trigger: Re-scoring all companies...")
@@ -127,7 +126,6 @@ async def rescore_all():
         return jsonify({"Error": "An unexpected error occurred", "Message": str(e)}), 500
 
 #Database API for fetching companies
-#TO BE CHANGED!!!!
 @app.route('/fetch-companies', methods=["GET"])
 async def fetch_company_data():
     try:
@@ -160,6 +158,24 @@ async def fetch_company_details_data(id):
     except Exception as e:
         logger.error(f"Error fetching company details for ID {id}: {str(e)}")
         return jsonify({'Error': 'An unexpected error occurred', 'Message': str(e)}), 500
+
+#Receive phone numbers from Apollo's People Enrichment API
+#This method is dormant and not yet working.
+@app.route('/apollo-phone-webhook', methods=["POST"])
+async def receive_user_phone_number():
+    logger.info("Receiving user phone number...")
+    try:
+        data = request.json
+        if data:
+            logger.info("Received phone number from Apollo webhook")
+            logger.info(data)
+            return jsonify({"status": "success", "message": "Phone number received"}), 200
+        else:
+            return jsonify({"status": "error", "message": "No data received"}), 400
+
+    except Exception as e:
+        logger.error(f"Failed to get phone number: {str(e)}")
+        return jsonify({"status": "error", "message": "Internal Server Error"}), 500
 
 #Sendgrid webhook to receive data about emails sent
 @app.route('/webhook', methods=["POST"])
@@ -206,7 +222,7 @@ async def get_keywords():
     try:
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
             async with pool.acquire() as conn:
-                query = "SELECT keywords FROM mock_companies"
+                query = "SELECT keywords FROM companies"
                 keyword_records = await conn.fetch(query)
                 keyword_list = [dict(keywords) for keywords in keyword_records]
                 return jsonify(keyword_list), 200
@@ -385,7 +401,6 @@ async def delete_note(note_id):
     except Exception as e:
         logger.error(f"Error deleting note: {str(e)}")
         return jsonify({"Error": "An unexpected error occurred", "details": str(e)}), 500
-
 
 if __name__ == "__main__":
     logger.info("Application running....")
