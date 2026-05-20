@@ -165,7 +165,7 @@ jobs:
 
       - name: Health check
         run: |
-          curl --fail --retry 10 --retry-delay 5 http://localhost:5050/health \
+          curl --fail --retry 10 --retry-delay 5 --retry-connrefused http://localhost:5050/health \
             && echo "Health check passed" \
             || (echo "Health check failed" && exit 1)
 
