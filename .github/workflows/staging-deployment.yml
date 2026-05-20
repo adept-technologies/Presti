@@ -98,8 +98,8 @@ jobs:
           IMAGE_REF: ${{ needs.build-and-push.outputs.image_ref }}
         run: |
           cd /home/administrator/AI-ML-Lead-Gen
-          echo "IMAGE_REF=$IMAGE_REF" > /tmp/image.env
-          docker compose --env-file /home/administrator/AI-ML-Lead-Gen/backend/.env --env-file /tmp/image.env up -d --remove-orphans
+          export IMAGE_REF="${IMAGE_REF}"
+          docker compose --env-file /home/administrator/AI-ML-Lead-Gen/backend/.env up -d --remove-orphans
         
             - name: Confirm deployment
               run: |
