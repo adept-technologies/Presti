@@ -8,7 +8,7 @@ import { ISettings } from '../../Libs/interfaces/settings.interface';
 })
 export class SettingsService {
   private defaultSettings: ISettings = {
-    theme: 'light',
+    theme: 'dark',
     language: 'en',
     timezone: 'UTC',
     notifications: { email: true, sms: false, inApp: true },

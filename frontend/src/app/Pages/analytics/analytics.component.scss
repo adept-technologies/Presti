@@ -1,7 +1,7 @@
 .analytics-container {
   display: grid;
   padding: 20px;
-  color: var(--color-white);
+  color: var(--text-primary);
 
   .kpi-row {
     display: grid;
@@ -20,7 +20,7 @@
 
       &:hover {
         transform: translateY(-5px);
-        border-color: var(--color-yellow);
+        border-color: var(--text-primary);
       }
 
       .kpi-label {
@@ -57,7 +57,7 @@
 
       h3 {
         font-size: 1.1rem;
-        color: var(--color-yellow);
+        color: #ffffff;
         margin-bottom: 20px;
         font-weight: 600;
         border-left: 4px solid var(--color-yellow);
@@ -87,14 +87,14 @@
   align-items: center;
   justify-content: center;
   height: 60vh;
-  color: var(--color-yellow);
+  color: var(--text-primary);
 
   .spinner {
     width: 50px;
     height: 50px;
     border: 3px solid rgba(250, 204, 21, 0.2);
     border-radius: 50%;
-    border-top-color: var(--color-yellow);
+    border-top-color: var(--text-primary);
     animation: spin 1s ease-in-out infinite;
     margin-bottom: 20px;
   }
