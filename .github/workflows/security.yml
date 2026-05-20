@@ -23,7 +23,6 @@ jobs:
             p/security-audit
             p/secrets
             p/javascript
-            p/angular
             p/typescript
             p/python
             p/flask
