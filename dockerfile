@@ -33,4 +33,4 @@ ENV PYTHONPATH=/app
 
 EXPOSE 5050
 
-CMD ["gunicorn", "--worker-class", "gevent", "--bind", "0.0.0.0:5050", "--timeout", "300", "main:app"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:5050", "--timeout", "300", "main:app"]
