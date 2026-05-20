@@ -1,0 +1,94 @@
+name: Security Pipeline (PR Gate)
+
+on:
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  # ==========================================
+  # 1. SAST: SEMGREP (Code Scanning)
+  # ==========================================
+  semgrep:
+    name: Semgrep SAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/default
+            p/security-audit
+            p/secrets
+            p/javascript
+            p/angular
+            p/typescript
+            p/python
+            p/flask
+          generateSarif: "1"
+        env:
+          SEMGREP_ARGS: --sarif --output=semgrep.sarif --audit
+          # TODO: Remove this line after this PR is merged to re-enable differential (fast) scanning!
+          SEMGREP_BASELINE_REF: ""
+          
+      - name: Upload Semgrep Results to GitHub Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+  # ==========================================
+  # 2. DAST: ZAP EPHEMERAL (App Logic)
+  # ==========================================
+  zap-ephemeral:
+    name: ZAP Baseline (Ephemeral)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Start Ephemeral Application
+        run: |
+          # Create a dummy service account file so the Docker volume mount doesn't crash
+          mkdir -p backend
+          echo "{}" > backend/service-account.json
+          
+          # Spin up the database and the Flask backend
+          docker compose up -d
+          
+      - name: Wait for Health Check
+        run: |
+          echo "Waiting for app to be ready..."
+          sleep 15
+          curl --fail --retry 10 --retry-delay 5 http://localhost:5050/health || (docker compose logs && exit 1)
+
+      - name: Run ZAP Baseline Scan
+        run: |
+          docker run --rm --network="host" \
+            -v $(pwd):/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+            -t http://localhost:5050 \
+            -I \
+            -J zap_report.json || EXIT_CODE=$?
+            
+          if [ "$EXIT_CODE" == "1" ] || [ "$EXIT_CODE" == "2" ]; then
+            echo "ZAP found vulnerabilities! Please check the GitHub Security Tab."
+            exit 0
+          elif [ ! -z "$EXIT_CODE" ] && [ "$EXIT_CODE" != "0" ]; then
+            echo "ZAP completely crashed! Failing the pipeline."
+            exit $EXIT_CODE
+          fi
+
+      - name: Convert ZAP JSON to SARIF
+        # We use an open-source action to convert ZAP's JSON to SARIF format
+        uses: SvanBoxel/zaproxy-to-ghas@main
+
+      - name: Upload ZAP Results to GitHub Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: zap
