@@ -100,10 +100,10 @@ jobs:
           cd /home/administrator/AI-ML-Lead-Gen
           export IMAGE_REF="${IMAGE_REF}"
           docker compose --env-file /home/administrator/AI-ML-Lead-Gen/backend/.env up -d --remove-orphans
-        
-            - name: Confirm deployment
-              run: |
-                echo "Staging deployment complete: ${{ needs.build-and-push.outputs.image_ref }}"
+
+      - name: Confirm deployment
+        run: |
+          echo "Staging deployment complete: ${{ needs.build-and-push.outputs.image_ref }}"
 
   # ============================================================
   # 3. SMOKE TESTS
