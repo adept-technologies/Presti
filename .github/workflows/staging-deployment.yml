@@ -113,19 +113,15 @@ jobs:
   smoke-tests:
     name: Smoke Tests on Staging
     runs-on: [ self-hosted, staging ]
-    needs: deploy-staging
-
+    needs: [deploy-staging, build-and-push]  # ← add build-and-push
+  
     steps:
-      - name: Wait for containers to be ready
-        # 30s gives the database time to pass its healthcheck and
-        # the .NET app time to fully initialise before curl hits it
-        run: sleep 30
-
       - name: Check backend container status
+        env:
+          IMAGE_REF: ${{ needs.build-and-push.outputs.image_ref }}
         run: |
-          STATUS=$(docker inspect --format='{{.State.Status}}'  mock-lead-gen-backend 2>/dev/null || echo "not found")
+          STATUS=$(docker inspect --format='{{.State.Status}}' mock-lead-gen-backend 2>/dev/null || echo "not found")
           echo "Container status: $STATUS"
-
           if [ "$STATUS" != "running" ]; then
             echo "Backend container is not running. Aborting."
             docker compose -f /home/administrator/AI-ML-Lead-Gen/docker-compose.yml logs mock-lead-gen-backend
