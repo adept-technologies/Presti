@@ -95,7 +95,6 @@ jobs:
         run: |
           docker pull "${{ needs.build-and-push.outputs.image_ref }}"
 
-  # ensure the stage environment docker compose file uses IMAGE_REF
       - name: Deploy with Docker Compose
         run: |
           cd /home/administrator/AI-ML-Lead-Gen
