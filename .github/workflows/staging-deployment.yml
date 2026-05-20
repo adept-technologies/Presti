@@ -79,28 +79,31 @@ jobs:
     name: Deploy to Staging Server
     runs-on: [ self-hosted, staging ]
     needs: build-and-push
-
+  
     steps:
       - name: Log in to Docker Hub
-        # Required so Compose can pull postgres:15 without hitting
-        # Docker Hub's rate limit or anonymous pull restrictions
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-
+  
       - name: Log in to GHCR
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-
+  
       - name: Pull image
         run: |
           docker pull "${{ needs.build-and-push.outputs.image_ref }}"
-
+  
       - name: Deploy with Docker Compose
+        env:
+          IMAGE_REF: ${{ needs.build-and-push.outputs.image_ref }}   # ← set at step level, not inline
         run: |
           cd /home/administrator/AI-ML-Lead-Gen
-          IMAGE_REF=${{ needs.build-and-push.outputs.image_ref }} \
-            docker compose --env-file /home/administrator/AI-ML-Lead-Gen/backend/.env up -d --remove-orphans
-
+          echo "IMAGE_REF=$IMAGE_REF" > /tmp/image.env          # ← write to a temp env file
+          docker compose \
+            --env-file /home/administrator/AI-ML-Lead-Gen/backend/.env \
+            --env-file /tmp/image.env \                          # ← pass both env files
+            up -d --remove-orphans
+  
       - name: Confirm deployment
         run: |
           echo "Staging deployment complete: ${{ needs.build-and-push.outputs.image_ref }}"
