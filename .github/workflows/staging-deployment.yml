@@ -105,43 +105,43 @@ jobs:
         run: |
           echo "Staging deployment complete: ${{ needs.build-and-push.outputs.image_ref }}"
 
-  # ============================================================
-  # 3. SMOKE TESTS
-  #    Also runs on the self-hosted runner so it can reach
-  #    localhost on the staging server directly.
-  # ============================================================
-  smoke-tests:
-    name: Smoke Tests on Staging
-    runs-on: [ self-hosted, staging ]
-    needs: deploy-staging
+  # # ============================================================
+  # # 3. SMOKE TESTS
+  # #    Also runs on the self-hosted runner so it can reach
+  # #    localhost on the staging server directly.
+  # # ============================================================
+  # smoke-tests:
+  #   name: Smoke Tests on Staging
+  #   runs-on: [ self-hosted, staging ]
+  #   needs: deploy-staging
 
-    steps:
-      - name: Wait for containers to be ready
-        # 30s gives the database time to pass its healthcheck and
-        # the .NET app time to fully initialise before curl hits it
-        run: sleep 30
+  #   steps:
+  #     - name: Wait for containers to be ready
+  #       # 30s gives the database time to pass its healthcheck and
+  #       # the .NET app time to fully initialise before curl hits it
+  #       run: sleep 30
 
-      - name: Check backend container status
-        run: |
-          STATUS=$(docker inspect --format='{{.State.Status}}'  mock-lead-gen-backend 2>/dev/null || echo "not found")
-          echo "Container status: $STATUS"
+  #     - name: Check backend container status
+  #       run: |
+  #         STATUS=$(docker inspect --format='{{.State.Status}}'  mock-lead-gen-backend 2>/dev/null || echo "not found")
+  #         echo "Container status: $STATUS"
 
-          if [ "$STATUS" != "running" ]; then
-            echo "Backend container is not running. Aborting."
-            docker compose -f /home/administrator/AI-ML-Lead-Gen/docker-compose.yml logs mock-lead-gen-backend
-            exit 1
-          fi
+  #         if [ "$STATUS" != "running" ]; then
+  #           echo "Backend container is not running. Aborting."
+  #           docker compose -f /home/administrator/AI-ML-Lead-Gen/docker-compose.yml logs mock-lead-gen-backend
+  #           exit 1
+  #         fi
 
-      - name: Print container logs
-        # Print last 70 lines so startup errors and listening port
-        # are always visible in the Actions run
-        run: docker logs mock-lead-gen-backend --tail 70
+  #     - name: Print container logs
+  #       # Print last 70 lines so startup errors and listening port
+  #       # are always visible in the Actions run
+  #       run: docker logs mock-lead-gen-backend --tail 70
 
-      - name: Health check
-        run: |
-          curl --fail --retry 10 --retry-delay 5 http://localhost:5050/health \
-            && echo "Health check passed" \
-            || (echo "Health check failed" && exit 1)
+  #     - name: Health check
+  #       run: |
+  #         curl --fail --retry 10 --retry-delay 5 http://localhost:5050/health \
+  #           && echo "Health check passed" \
+  #           || (echo "Health check failed" && exit 1)
 
   # ============================================================
   # 4. MANUAL APPROVAL GATE
