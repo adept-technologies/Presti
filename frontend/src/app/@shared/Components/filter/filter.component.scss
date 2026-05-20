@@ -2,13 +2,13 @@
   display: flex;
   gap: 1rem;
   align-items: center;
-  border: 2px solid #f9f9f9;
+  border: 2px solid var(--border-color, #f9f9f9);
   padding: 10px 10px; 
 }
 
 select{
   cursor: pointer;
-  color: var(--color-yellow);
+  color: var(--text-primary);
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-header);
   font-size: var(--font-size-header);
@@ -18,12 +18,12 @@ select{
   padding: 0;
   margin: 0;
   width: 100%;
-  background-color: var(--color-black);
+  background-color: var(--bg-filter);
   border: none;
 }
 
 .dropdown-title{
-  color: var(--color-yellow);
+  color: var(--text-primary);
   font-family: var(--font-family-base);
   font-weight: var(--font-weight-header);
   font-size: var(--font-size-header);

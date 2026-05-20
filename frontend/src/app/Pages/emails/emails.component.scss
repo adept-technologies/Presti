@@ -11,7 +11,7 @@
   padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-  color: #ffffff; /* ensure white text */
+  color: var(--text-primary); /* ensure white text */
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -27,26 +27,26 @@
 
 .email-recipient {
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .email-date {
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .email-subject {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .email-body {
-  color: #ffffff;
+  color: var(--text-primary);
   white-space: pre-wrap;
   line-height: 1.4;
 }
 
 .loading, .error, .no-emails {
   padding: 1rem;
-  color: #ffffff;
+  color: var(--text-primary);
 }

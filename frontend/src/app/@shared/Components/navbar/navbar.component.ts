@@ -3,6 +3,7 @@ import { SearchBarComponent } from "../search-bar/search-bar.component";
 import { RouterLink } from '@angular/router';
 import { SearchService } from '../../Services/search.service';
 import { MatIconModule } from '@angular/material/icon';
+import { SettingsService } from '../../Services/settings.service';
 
 @Component({
   selector: 'app-navbar',
@@ -13,27 +14,22 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class NavbarComponent implements OnInit {
   searchText: string = '';
-  isDarkTheme = true;
+  theme: string = 'dark';
 
-  constructor(private searchService: SearchService) {}
+  constructor(
+    private searchService: SearchService,
+    private settingsService: SettingsService
+  ) {}
 
   ngOnInit() {
-    const savedTheme = localStorage.getItem('theme');
-    this.isDarkTheme = savedTheme !== 'light';
-    document.body.classList.add(this.isDarkTheme ? 'dark-theme' : 'light-theme');
+    this.settingsService.settings$.subscribe(settings => {
+      this.theme = settings.theme;
+    });
   }
 
   toggleTheme() {
-    this.isDarkTheme = !this.isDarkTheme;
-    const body = document.body;
-    if (this.isDarkTheme) {
-      body.classList.remove('light-theme');
-      body.classList.add('dark-theme');
-    } else {
-      body.classList.remove('dark-theme');
-      body.classList.add('light-theme');
-    }
-    localStorage.setItem('theme', this.isDarkTheme ? 'dark' : 'light');
+    const newTheme = this.theme === 'dark' ? 'light' : 'dark';
+    this.settingsService.updateSettings({ theme: newTheme });
   }
 
   onSearchChange(event: Event): void {

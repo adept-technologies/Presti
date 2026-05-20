@@ -19,7 +19,7 @@
     </div>
     <div class="kpi-card">
       <div class="kpi-label">REPLY RATE</div>
-      <div class="kpi-value" style="color: var(--color-yellow)">
+      <div class="kpi-value">
         {{ metrics?.outreach_kpis?.total_sent ? (metrics.outreach_kpis.replied / metrics.outreach_kpis.total_sent * 100).toFixed(1) : '0.0' }}%
       </div>
     </div>

@@ -1,7 +1,8 @@
-import { Component, OnInit, Renderer2 } from '@angular/core';
+import { Component, OnInit, OnDestroy, Renderer2 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './@shared/Components/navbar/navbar.component';
 import { SettingsService } from './@shared/Services/settings.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -10,11 +11,12 @@ import { SettingsService } from './@shared/Services/settings.service';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'Lead Gen';
-  currentTheme = 'retro-green-theme'; // default
+  currentTheme = 'dark-theme'; // default
   lightTheme = 'light-theme';
-  darkTheme = 'retro-green-theme';
+  darkTheme = 'dark-theme';
+  private settingsSub?: Subscription;
 
   constructor(
     private settingsService: SettingsService,
@@ -24,21 +26,24 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-    const savedTheme = localStorage.getItem('selectedTheme') || this.darkTheme;
-    this.applyTheme(savedTheme);
+    this.settingsSub = this.settingsService.settings$.subscribe(settings => {
+      const newTheme = settings.theme === 'light' ? this.lightTheme : this.darkTheme;
+      this.applyTheme(newTheme);
+    });
   }
 
-  toggleTheme() {
-    const newTheme =
-      this.currentTheme === this.darkTheme ? this.lightTheme : this.darkTheme;
-    this.applyTheme(newTheme);
+  ngOnDestroy() {
+    if (this.settingsSub) {
+      this.settingsSub.unsubscribe();
+    }
   }
 
   applyTheme(theme: string) {
     // Remove old class and apply new
-    this.renderer.removeClass(document.body, this.currentTheme);
+    if (this.currentTheme !== theme) {
+      this.renderer.removeClass(document.body, this.currentTheme);
+    }
     this.renderer.addClass(document.body, theme);
     this.currentTheme = theme;
-    localStorage.setItem('selectedTheme', theme);
   }
 }
