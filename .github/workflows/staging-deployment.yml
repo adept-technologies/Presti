@@ -122,18 +122,18 @@ jobs:
         env:
           IMAGE_REF: ${{ needs.build-and-push.outputs.image_ref }}
         run: |
-          STATUS=$(docker inspect --format='{{.State.Status}}' mock-lead-gen-backend 2>/dev/null || echo "not found")
+          STATUS=$(docker inspect --format='{{.State.Status}}' mock-lead-gen-lead-gen-backend-1 2>/dev/null || echo "not found")
           echo "Container status: $STATUS"
           if [ "$STATUS" != "running" ]; then
             echo "Backend container is not running. Aborting."
-            docker compose -f /home/administrator/AI-ML-Lead-Gen/docker-compose.staging.yml logs mock-lead-gen-backend
+            docker compose -f /home/administrator/AI-ML-Lead-Gen/docker-compose.staging.yml logs mock-lead-gen-lead-gen-backend-1
             exit 1
           fi
 
       - name: Print container logs
         # Print last 70 lines so startup errors and listening port
         # are always visible in the Actions run
-        run: docker logs mock-lead-gen-backend --tail 70
+        run: docker logs mock-lead-gen-lead-gen-backend-1 --tail 70
 
       - name: Health check
         run: |
