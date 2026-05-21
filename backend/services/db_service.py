@@ -19,7 +19,7 @@ from utils.db_queries import (
 )
 from utils.set_conversion import convert_sets
 
-load_dotenv(verbose=True, override=True)
+load_dotenv()  # Never override env vars already set by Docker Compose / the OS
 
 
 DB_URL = os.getenv("MOCK_DATABASE_URL")
