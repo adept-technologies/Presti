@@ -85,7 +85,7 @@ def debug():
 async def get_config():
     # Return API_URL only. Empty string = frontend & backend are on the same
     # origin (production), so the Angular app will use relative URLs.
-    # Only set API_URL when the API lives on a DIFFERENT host/port than the frontend.
+    # Only set API_URL when the API lives on a DIFFERENT host/port than the frontend does.
     api_url = os.getenv("API_URL") or ""
     return jsonify({"apiUrl": api_url}), 200
 
