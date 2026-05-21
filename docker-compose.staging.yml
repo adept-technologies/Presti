@@ -28,7 +28,7 @@ services:
       - ./backend/.env          # Injects ALL vars (incl. MOCK_DATABASE_URL) into the container
     environment:
       # These override anything in .env if needed
-      DATABASE_URL: postgresql://mock_lead_gen_user:mock_lead_gen_password@mock-lead-gen-db:5432/mock_lead_gen_db
+      DATABASE_URL: postgresql://mock_lead_gen_user:mock_lead_gen_password@db:5432/mock_lead_gen_db
       GOOGLE_APPLICATION_CREDENTIALS: /app/service-account.json
       API_URL: http://192.168.1.250:5050
     volumes:
