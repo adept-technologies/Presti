@@ -4,7 +4,6 @@ WORKDIR /frontend
 COPY ./frontend/package*.json ./
 RUN npm ci --legacy-peer-deps
 COPY ./frontend/ ./
-RUN npm run build
 ARG BUILD_CONFIG=production
 RUN npx ng build --configuration $BUILD_CONFIG
 
