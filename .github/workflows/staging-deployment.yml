@@ -96,12 +96,13 @@ jobs:
           docker pull "${{ needs.build-and-push.outputs.image_ref }}"
 
       - name: Deploy with Docker Compose
-        env:
-          IMAGE_REF: ${{ needs.build-and-push.outputs.image_ref }}
         run: |
           cd /home/administrator/AI-ML-Lead-Gen
-          export IMAGE_REF="${IMAGE_REF}"
-          docker compose -p mock-lead-gen -f docker-compose.staging.yml up -d --remove-orphans
+          IMAGE_REF: "${{ needs.build-and-push.outputs.image_ref }}" \
+          docker compose \
+            -p mock-lead-gen \
+            -f docker-compose.staging.yml \
+            up -d --force-recreate --remove-orphans
 
       - name: Confirm deployment
         run: |
