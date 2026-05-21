@@ -47,4 +47,4 @@ networks:
 volumes:
   pgdata:
     external: true
-    name: mock-lead-gen_pgdata
+    name: ai-ml-lead-gen_mock_lead_gen_pgdata
