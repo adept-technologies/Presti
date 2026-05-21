@@ -5,6 +5,8 @@ COPY ./frontend/package*.json ./
 RUN npm ci --legacy-peer-deps
 COPY ./frontend/ ./
 RUN npm run build
+ARG BUILD_CONFIG=production
+RUN ng build --configuration $BUILD_CONFIG
 
 # Stage 2 - Python Dependencies Builder
 FROM python:3.11-slim AS python-builder
