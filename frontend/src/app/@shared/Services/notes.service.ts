@@ -1,14 +1,17 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { AppConfigService } from '../../core/services/app-config.service';
 import { INote } from '../../Libs/interfaces/note.interface';
 
 @Injectable({
     providedIn: 'root'
 })
 export class NotesService {
-    private readonly backend_url: string = `${environment.API_URL}`;
+    private appConfig = inject(AppConfigService);
+    private get backend_url(): string {
+        return this.appConfig.apiUrl;
+    }
     private http = inject(HttpClient);
 
     saveNote(companyId: number, note: string): Observable<INote> {

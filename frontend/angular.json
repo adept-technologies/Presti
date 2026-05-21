@@ -47,6 +47,12 @@
               ]
             },
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",
@@ -55,8 +61,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "500kB",
+                  "maximumError": "1kB"
                 }
               ],
               "outputHashing": "all"
@@ -74,6 +80,9 @@
           "configurations": {
             "production": {
               "buildTarget": "lead-gen:build:production"
+            },
+            "staging": {
+              "buildTarget": "lead-gen:build:staging"
             },
             "development": {
               "buildTarget": "lead-gen:build:development"
