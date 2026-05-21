@@ -20,7 +20,7 @@ env:
 permissions:
   contents: read
   packages: write
-  
+
 jobs:
   # ============================================================
   # 1. BUILD & PUSH DOCKER IMAGE (tagged with commit SHA)
@@ -79,29 +79,29 @@ jobs:
   # ============================================================
   deploy-staging:
     name: Deploy to Staging Server
-    runs-on: [ self-hosted, staging ]
+    runs-on: [self-hosted, staging]
     needs: build-and-push
-  
+
     steps:
       - name: Log in to Docker Hub
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-  
+
       - name: Log in to GHCR
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-  
+
       - name: Pull image
         run: |
           docker pull "${{ needs.build-and-push.outputs.image_ref }}"
-  
+
       - name: Deploy with Docker Compose
         env:
           IMAGE_REF: ${{ needs.build-and-push.outputs.image_ref }}
         run: |
           cd /home/administrator/AI-ML-Lead-Gen
           export IMAGE_REF="${IMAGE_REF}"
-          docker compose --env-file /home/administrator/AI-ML-Lead-Gen/backend/.env up -d --remove-orphans
+          docker compose docker-compose.staging.yml up -d --remove-orphans
 
       - name: Confirm deployment
         run: |
@@ -114,9 +114,9 @@ jobs:
   # ============================================================
   smoke-tests:
     name: Smoke Tests on Staging
-    runs-on: [ self-hosted, staging ]
-    needs: [deploy-staging, build-and-push]  # ← add build-and-push
-  
+    runs-on: [self-hosted, staging]
+    needs: [deploy-staging, build-and-push] # ← add build-and-push
+
     steps:
       - name: Check backend container status
         env:
@@ -147,7 +147,7 @@ jobs:
   #    reviewers configured on the staging-approval Environment.
   #    Nothing proceeds until a reviewer clicks Approve in the
   #    GitHub Actions UI.
-  
+
   #    To set this up:
   #    Repo > Settings > Environments > staging-approval
   #    > Protection rules > Required reviewers > add your team
