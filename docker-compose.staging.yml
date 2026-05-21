@@ -12,7 +12,7 @@ services:
       POSTGRES_USER: mock_lead_gen_user
       POSTGRES_PASSWORD: mock_lead_gen_password
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U lead_gen_user -d lead_gen_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U mock_lead_gen_user -d mock_lead_gen_db" ]
       interval: 1m30s
       timeout: 30s
       retries: 5
@@ -20,9 +20,7 @@ services:
 
   mock-lead-gen-backend:
     container_name: mock-lead-gen-backend
-    build:
-      context: ./
-      dockerfile: dockerfile
+    image: ${IMAGE_REF} 
     ports:
       - "5050:5050"
     env_file:
