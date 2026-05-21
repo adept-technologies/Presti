@@ -1,6 +1,7 @@
 import asyncio
 import asyncpg
 import os
+from dotenv import load_dotenv
 from config.logging_config import setup_logging
 import logging
 from quart import Quart, jsonify, request, send_file, send_from_directory
@@ -23,7 +24,8 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 #The Database in use
-DB_URL = os.getenv("PROD_DATABASE_URL")
+load_dotenv(override=True)
+DB_URL = os.getenv("MOCK_DATABASE_URL")
 
 #Create quart App
 app = Quart(__name__, static_folder="static", static_url_path="")
