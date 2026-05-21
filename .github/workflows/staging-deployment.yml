@@ -123,10 +123,11 @@ jobs:
         run: |
           cd /home/administrator/AI-ML-Lead-Gen
 
-          CONTAINER_ID=$(docker compose \
-            -p mock-lead-gen \
-            -f docker-compose.staging.yml \
-            ps -q backend)
+          CONTAINER_ID=$(IMAGE_REF="${{ needs.build-and-push.outputs.image_ref }}" \
+            docker compose \
+              -p mock-lead-gen \
+              -f docker-compose.staging.yml \
+              ps -q backend)
 
           if [ -z "$CONTAINER_ID" ]; then
             echo "Backend container not found"
@@ -149,10 +150,11 @@ jobs:
         run: |
           cd /home/administrator/AI-ML-Lead-Gen
 
-          CONTAINER_ID=$(docker compose \
-            -p mock-lead-gen \
-            -f docker-compose.staging.yml \
-            ps -q backend)
+          CONTAINER_ID=$(IMAGE_REF="${{ needs.build-and-push.outputs.image_ref }}" \
+            docker compose \
+              -p mock-lead-gen \
+              -f docker-compose.staging.yml \
+              ps -q backend)
 
           if [ -z "$CONTAINER_ID" ]; then
             echo "Backend container not found"
