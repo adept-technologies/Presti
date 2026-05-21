@@ -39,6 +39,11 @@ Thumbs.db
 docker-compose.yml
 .dockerignore
 
+# Secrets — NEVER bake these into the image.
+# Docker Compose passes the correct values at runtime via --env-file.
+backend/.env
+backend/.env.*
+
 # Docs
 *.md
 README.md

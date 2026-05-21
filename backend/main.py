@@ -24,7 +24,7 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 #The Database in use
-load_dotenv(override=True)
+load_dotenv()  # Never override env vars already set by Docker Compose / the OS
 DB_URL = os.getenv("PROD_DATABASE_URL")
 
 #Create quart App
