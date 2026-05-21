@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 #The Database in use
 load_dotenv(override=True)
-DB_URL = os.getenv("MOCK_DATABASE_URL")
+DB_URL = os.getenv("PROD_DATABASE_URL")
 
 #Create quart App
 app = Quart(__name__, static_folder="static", static_url_path="")
