@@ -29,6 +29,7 @@ services:
       # These override anything in .env if needed
       DATABASE_URL: postgresql://lead_gen_user:lead_gen_password@lead-gen-db:5432/lead_gen_db
       GOOGLE_APPLICATION_CREDENTIALS: /app/service-account.json
+      API_URL: https://lead-gen.adept-techno.co.ke
     volumes:
       - ./backend/service-account.json:/app/service-account.json
     depends_on:
