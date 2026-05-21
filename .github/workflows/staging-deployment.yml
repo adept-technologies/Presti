@@ -126,7 +126,7 @@ jobs:
           echo "Container status: $STATUS"
           if [ "$STATUS" != "running" ]; then
             echo "Backend container is not running. Aborting."
-            docker compose -f /home/administrator/AI-ML-Lead-Gen/docker-compose.yml logs mock-lead-gen-backend
+            docker compose -f /home/administrator/AI-ML-Lead-Gen/docker-compose.staging.yml logs mock-lead-gen-backend
             exit 1
           fi
 

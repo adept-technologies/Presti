@@ -73,7 +73,7 @@ if __name__ == "__main__":
     import os
     from dotenv import load_dotenv
     load_dotenv()
-    DB_URL = os.getenv("MOCK_DATABASE_URL")
+    DB_URL = os.getenv("DATABASE_URL")
     semaphore = asyncio.Semaphore(10)
     async def run():
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
