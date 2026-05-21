@@ -98,7 +98,7 @@ jobs:
       - name: Deploy with Docker Compose
         run: |
           cd /home/administrator/AI-ML-Lead-Gen
-          IMAGE_REF: "${{ needs.build-and-push.outputs.image_ref }}" \
+          IMAGE_REF="${{ needs.build-and-push.outputs.image_ref }}" \
           docker compose \
             -p mock-lead-gen \
             -f docker-compose.staging.yml \
