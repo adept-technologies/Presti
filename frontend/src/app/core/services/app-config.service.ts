@@ -10,33 +10,37 @@ export class AppConfigService {
     private platformId = inject(PLATFORM_ID);
 
     load(): Promise<void> {
+        // SSR: no window available — use empty string (relative) as safe default
         if (!isPlatformBrowser(this.platformId)) {
-            const serverApiUrl = (typeof process !== 'undefined' && process.env ? process.env['API_URL'] || process.env['SERVER_URL'] : null) || 'http://127.0.0.1:5050';
-            this.config = { apiUrl: serverApiUrl };
+            this.config = { apiUrl: '' };
             return Promise.resolve();
         }
 
-        let configUrl = '/config';
         const hostname = window.location.hostname;
         const port = window.location.port;
 
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            if (port !== '5050') {
-                configUrl = 'http://127.0.0.1:5050/config';
-            }
+        // Local dev: frontend runs on :4200, backend on :5050.
+        // Inject the backend URL directly — no network call needed.
+        if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '5050') {
+            this.config = { apiUrl: `http://${hostname}:5050` };
+            return Promise.resolve();
         }
 
+        // Production / staging: frontend & backend share the same origin.
+        // /config returns "" (API_URL not set) → all API calls become relative paths.
         return firstValueFrom(
-            this.http.get<{ apiUrl: string }>(configUrl),
+            this.http.get<{ apiUrl: string }>('/config'),
         ).then((cfg) => {
-            this.config = cfg;
+            // Treat missing or empty apiUrl as "use relative URLs"
+            this.config = { apiUrl: cfg.apiUrl || '' };
         }).catch((err) => {
-            console.error('Could not load configuration, using fallback API URL', err);
-            this.config = { apiUrl: 'http://127.0.0.1:5050' };
+            console.error('Could not load /config, falling back to relative URLs', err);
+            this.config = { apiUrl: '' };
         });
     }
 
+    /** Empty string means "same origin" — services build relative URLs like /fetch-companies */
     get apiUrl(): string {
-        return this.config?.apiUrl || 'http://127.0.0.1:5050';
+        return this.config?.apiUrl ?? '';
     }
 }

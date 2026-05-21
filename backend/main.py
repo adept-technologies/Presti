@@ -83,7 +83,10 @@ def debug():
 @app.route("/api/config", methods=["GET"])
 @app.route("/config", methods=["GET"])
 async def get_config():
-    api_url = os.getenv("API_URL") or os.getenv("SERVER_URL") or "http://127.0.0.1:5050"
+    # Return API_URL only. Empty string = frontend & backend are on the same
+    # origin (production), so the Angular app will use relative URLs.
+    # Only set API_URL when the API lives on a DIFFERENT host/port than the frontend.
+    api_url = os.getenv("API_URL") or ""
     return jsonify({"apiUrl": api_url}), 200
 
 # =============================================================================
