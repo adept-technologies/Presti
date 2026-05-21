@@ -63,7 +63,9 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ steps.meta.outputs.image_ref }} .
+          docker build \
+            --build-arg BUILD_CONFIG=staging \
+            -t ${{ steps.meta.outputs.image_ref }} .
 
       - name: Push image to GHCR
         run: |
