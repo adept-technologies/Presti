@@ -37,6 +37,10 @@ services:
         condition: service_healthy
     restart: always
 
+networks:
+  mock-lead-gen-network:
+    driver: bridge
+
 volumes:
   pgdata:
     external: true
