@@ -22,7 +22,7 @@ from utils.set_conversion import convert_sets
 load_dotenv()  # Never override env vars already set by Docker Compose / the OS
 
 
-DB_URL = os.getenv("PROD_DATABASE_URL")
+DB_URL = os.getenv("DATABASE_URL")
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

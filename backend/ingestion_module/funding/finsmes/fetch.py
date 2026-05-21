@@ -19,8 +19,8 @@ from utils.data_structures.news_data_structure import fetched_funding_data as fu
 
 logger = logging.getLogger()
 
-load_dotenv(override=True)
-DB_URL = os.getenv("DEV_DATABASE_URL")
+load_dotenv()
+DB_URL = os.getenv("DATABASE_URL")
 
 #Configure semaphore
 MAX_CONNECTIONS = 10

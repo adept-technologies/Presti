@@ -10,8 +10,8 @@ from orchestration.storage import main as storage_main
 from orchestration.scoring import main as scoring_main
 from orchestration.outreach import main as outreach_main
 
-load_dotenv(override=True)
-DB_URL = os.getenv("PROD_DATABASE_URL")
+load_dotenv()
+DB_URL = os.getenv("DATABASE_URL")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
