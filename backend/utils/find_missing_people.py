@@ -99,7 +99,7 @@ async def find_missing_people(pool: asyncpg.Pool, client: httpx.AsyncClient):
 
 if __name__ == "__main__":
     load_dotenv(override=True)
-    DB_URL = os.getenv("MOCK_DATABASE_URL")
+    DB_URL = os.getenv("DATABASE_URL")
 
     async def main():
         print("Starting pipeline to discover and enrich missing leads...")
