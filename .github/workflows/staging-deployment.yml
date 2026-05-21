@@ -120,21 +120,46 @@ jobs:
 
     steps:
       - name: Check backend container status
-        env:
-          IMAGE_REF: ${{ needs.build-and-push.outputs.image_ref }}
         run: |
-          STATUS=$(docker inspect --format='{{.State.Status}}' mock-lead-gen-lead-gen-backend-1 2>/dev/null || echo "not found")
+          cd /home/administrator/AI-ML-Lead-Gen
+
+          CONTAINER_ID=$(docker compose \
+            -p mock-lead-gen \
+            -f docker-compose.staging.yml \
+            ps -q backend)
+
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "Backend container not found"
+            exit 1
+          fi
+
+          STATUS=$(docker inspect --format='{{.State.Status}}' "$CONTAINER_ID")
+
           echo "Container status: $STATUS"
+
           if [ "$STATUS" != "running" ]; then
-            echo "Backend container is not running. Aborting."
-            docker compose -f /home/administrator/AI-ML-Lead-Gen/docker-compose.staging.yml logs mock-lead-gen-lead-gen-backend-1
+            echo "Backend container is not running"
+            docker logs "$CONTAINER_ID"
             exit 1
           fi
 
       - name: Print container logs
         # Print last 70 lines so startup errors and listening port
         # are always visible in the Actions run
-        run: docker logs mock-lead-gen-lead-gen-backend-1 --tail 70
+        run: |
+          cd /home/administrator/AI-ML-Lead-Gen
+
+          CONTAINER_ID=$(docker compose \
+            -p mock-lead-gen \
+            -f docker-compose.staging.yml \
+            ps -q backend)
+
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "Backend container not found"
+            exit 1
+          fi
+
+          docker logs "$CONTAINER_ID" --tail 70
 
       - name: Health check
         run: |
