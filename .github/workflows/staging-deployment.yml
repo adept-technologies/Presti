@@ -101,7 +101,7 @@ jobs:
         run: |
           cd /home/administrator/AI-ML-Lead-Gen
           export IMAGE_REF="${IMAGE_REF}"
-          docker compose -f docker-compose.staging.yml up -d --remove-orphans
+          docker compose -p mock-lead-gen -f docker-compose.staging.yml up -d --remove-orphans
 
       - name: Confirm deployment
         run: |
