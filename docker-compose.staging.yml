@@ -39,3 +39,5 @@ services:
 
 volumes:
   pgdata:
+    external: true
+    name: mock-lead-gen_pgdata
