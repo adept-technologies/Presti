@@ -16,6 +16,8 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
+    networks:
+      - lead-gen-network
 
   backend:
     image: ${IMAGE_REF} 
@@ -32,12 +34,14 @@ services:
     volumes:
       - ./backend/service-account.json:/app/service-account.json
     depends_on:
-      mock-lead-gen-db:
+      db:
         condition: service_healthy
     restart: always
+    networks:
+      - lead-gen-network
 
 networks:
-  mock-lead-gen-network:
+  lead-gen-network:
     driver: bridge
 
 volumes:
