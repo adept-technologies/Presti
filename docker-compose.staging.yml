@@ -1,5 +1,6 @@
 services:
   lead-gen-db:
+    container_name: mock-lead-gen-db
     image: postgres:17
     restart: always
     ports:
@@ -18,6 +19,7 @@ services:
       start_period: 30s
 
   lead-gen-backend:
+    container_name: mock-lead-gen-backend
     build:
       context: ./
       dockerfile: dockerfile
