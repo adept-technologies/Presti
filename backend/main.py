@@ -34,9 +34,22 @@ app.config.update(
 )
 app.logger.handlers = [] #Remove quart's default logging
 app.logger.propagate = True #Use our configured logger
+
+allowed_origins = [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200",
+    "http://20.121.43.237",
+    "http://192.168.1.250:5050"
+    "http://lead-gen.adept-techno.co.ke",
+    "https://lead-gen.adept-techno.co.ke"
+]
+server_url = os.getenv("SERVER_URL")
+if server_url and server_url not in allowed_origins:
+    allowed_origins.append(server_url)
+
 app = cors(
     app,
-    allow_origin=["http://20.121.43.237", "http://lead-gen.adept-techno.co.ke", "https://lead-gen.adept-techno.co.ke"],
+    allow_origin=allowed_origins,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     allow_credentials=True
@@ -64,6 +77,12 @@ def debug():
         "cwd": os.getcwd(),
         "index_exists": os.path.exists(os.path.join(app.static_folder, "index.html"))
     }
+
+@app.route("/api/config", methods=["GET"])
+@app.route("/config", methods=["GET"])
+async def get_config():
+    api_url = os.getenv("API_URL") or os.getenv("SERVER_URL") or "http://127.0.0.1:5050"
+    return jsonify({"apiUrl": api_url}), 200
 
 # =============================================================================
 # HEALTH CHECK
@@ -406,5 +425,5 @@ async def delete_note(note_id):
 
 if __name__ == "__main__":
     logger.info("Application running....")
-    app.run(port=5001, debug=True)
+    app.run(port=5050, debug=True)
     logger.info("Application Done")

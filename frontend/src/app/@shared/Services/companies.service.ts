@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { ICompany } from '../../Libs/interfaces/company.interface';
 import { IPeople } from '../../Libs/interfaces/people.interface';
 import { IEmail } from '../../Libs/interfaces/email.interface';
-import { environment } from '../../../environments/environment.prod';
+import { AppConfigService } from '../../core/services/app-config.service';
 
 interface CompanyField {
   label: string;
@@ -21,7 +21,10 @@ export interface CompanySection {
   providedIn: 'root'
 })
 export class CompaniesService {
-  private readonly backend_url: string = `${environment.API_URL}`
+  private appConfig = inject(AppConfigService);
+  private get backend_url(): string {
+    return this.appConfig.apiUrl;
+  }
 
   private http = inject(HttpClient);
 

@@ -1,11 +1,11 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, Input, OnInit, ViewChild } from '@angular/core';
 import { CommonModule, NgFor } from '@angular/common';
 import { ButtonComponent } from '../button/button.component';
 import { RouterModule } from '@angular/router';
 import { CompaniesService } from '../../Services/companies.service';
 import { SearchService } from '../../Services/search.service';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { AppConfigService } from '../../../core/services/app-config.service';
 
 
 export interface Column {
@@ -48,7 +48,10 @@ export class LeadsTableComponent implements OnInit {
     private http: HttpClient
   ) { }
 
-  backend_url = environment.API_URL;
+  private appConfig = inject(AppConfigService);
+  get backend_url(): string {
+    return this.appConfig.apiUrl;
+  }
 
   ngOnInit(): void {
     this.filteredData = [...this.data];
