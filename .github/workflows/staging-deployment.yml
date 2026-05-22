@@ -165,12 +165,86 @@ jobs:
 
       - name: Health check
         run: |
-          curl --fail --retry 10 --retry-delay 5 http://localhost:5050/health \
+          curl --fail --retry 10 --retry-delay 5 --retry-connrefused http://localhost:5050/health \
             && echo "Health check passed" \
             || (echo "Health check failed" && exit 1)
 
   # ============================================================
-  # 4. MANUAL APPROVAL GATE
+  # 4. OWASP ZAP DAST SCAN (FULL)
+  #    Runs on the self-hosted runner to scan the application
+  #    actively running on localhost:5050.
+  # ============================================================
+  zap-scan-staging:
+    name: OWASP ZAP Full Scan (Staging)
+    runs-on: [ self-hosted, staging ]
+    needs: smoke-tests
+    steps:
+      - name: Run ZAP Full Scan
+        run: |
+          chmod 777 $(pwd)
+          docker run --rm --network="host" -u root \
+            -v $(pwd):/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
+            -t http://localhost:5050 \
+            -I \
+            -J report_json.json || EXIT_CODE=$?
+            
+          if [ "$EXIT_CODE" == "1" ] || [ "$EXIT_CODE" == "2" ]; then
+            echo "ZAP found vulnerabilities! Please check the GitHub Security Tab."
+            exit 0
+          elif [ ! -z "$EXIT_CODE" ] && [ "$EXIT_CODE" != "0" ]; then
+            echo "ZAP completely crashed! Failing the pipeline."
+            exit $EXIT_CODE
+          fi
+
+      - name: Convert ZAP JSON to SARIF
+        # SvanBoxel/zaproxy-to-ghas is abandoned and broken on the new GitHub artifact API.
+        # This inline Python script does the same job reliably without any third-party dependency.
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          from urllib.parse import urlparse
+          try:
+              with open("report_json.json") as f:
+                  zap = json.load(f)
+          except FileNotFoundError:
+              print("report_json.json not found — ZAP may not have completed. Writing empty SARIF.")
+              zap = {"site": []}
+
+          results = []
+          for site in zap.get("site", []):
+              for alert in site.get("alerts", []):
+                  for instance in alert.get("instances", [{"uri": site.get("@name",""), "method":"","param":"","evidence":""}]):
+                      raw_uri = instance.get("uri", "")
+                      parsed = urlparse(raw_uri)
+                      relative_uri = parsed.path.lstrip("/") or "index"
+                      results.append({
+                          "ruleId": str(alert.get("pluginid", "0")),
+                          "message": {"text": alert.get("desc", alert.get("name", ""))},
+                          "locations": [{"physicalLocation": {"artifactLocation": {"uri": relative_uri}}}],
+                          "level": {"High":"error","Medium":"warning","Low":"note","Informational":"none"}.get(alert.get("riskdesc","").split(" ")[0], "none")
+                      })
+
+          sarif = {
+              "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+              "version": "2.1.0",
+              "runs": [{"tool": {"driver": {"name": "OWASP ZAP", "rules": []}}, "results": results}]
+          }
+          with open("results.sarif", "w") as f:
+              json.dump(sarif, f, indent=2)
+          print(f"SARIF written with {len(results)} results.")
+          EOF
+
+      - name: Upload ZAP Results to GitHub Security Tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: zap-staging
+
+  # ============================================================
+  # 5. MANUAL APPROVAL GATE
   #    The workflow pauses here. GitHub emails all required
   #    reviewers configured on the staging-approval Environment.
   #    Nothing proceeds until a reviewer clicks Approve in the
@@ -183,7 +257,7 @@ jobs:
   await-approval:
     name: Await Team Approval
     runs-on: ubuntu-latest
-    needs: [build-and-push, smoke-tests]
+    needs: [build-and-push, smoke-tests, zap-scan-staging]
     environment: staging-approval
 
     steps:
