@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:17
+    restart: always
+    ports:
+      - "2345:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: mock_lead_gen_db
+      POSTGRES_USER: mock_lead_gen_user
+      POSTGRES_PASSWORD: mock_lead_gen_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mock_lead_gen_user -d mock_lead_gen_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - mock-lead-gen-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "5050:5050"
+    environment:
+      DATABASE_URL: postgresql://mock_lead_gen_user:mock_lead_gen_password@db:5432/mock_lead_gen_db
+      GOOGLE_APPLICATION_CREDENTIALS: /app/service-account.json
+      API_URL: http://localhost:5050
+    volumes:
+      - ./backend/service-account.json:/app/service-account.json
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - mock-lead-gen-network
+
+networks:
+  mock-lead-gen-network:
+    driver: bridge
+
+volumes:
+  pgdata:  # local, not external — created automatically
