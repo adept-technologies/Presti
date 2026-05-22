@@ -1,8 +1,15 @@
 name: Security Pipeline (PR Gate)
 
 on:
+  push:
+    branches: ["main", "dev"]
   pull_request:
     branches: ["main", "dev"]
+
+permissions:
+  security-events: write
+  actions: read
+  contents: read
 
 jobs:
   # ==========================================
