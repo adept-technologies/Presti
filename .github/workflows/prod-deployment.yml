@@ -169,13 +169,13 @@ jobs:
 
             docker pull "$IMAGE_REF"
 
-            echo ""
-            echo "Taking database backup..."
-            mkdir -p ~/AI-ML-Lead-Gen/db_backups
-            docker compose -p lead-gen -f docker-compose.prod.yml exec -T db \
-              pg_dump -U lead_gen_user lead_gen_db \
-              > ~/AI-ML-Lead-Gen/db_backups/backup_${SHA}.sql
-            echo "Backup saved: db_backups/backup_${SHA}.sql"
+            #echo ""
+            #echo "Taking database backup..."
+            #mkdir -p ~/AI-ML-Lead-Gen/db_backups
+            #docker compose -p lead-gen -f docker-compose.prod.yml exec -T db \
+              #pg_dump -U lead_gen_user lead_gen_db \
+              #> ~/AI-ML-Lead-Gen/db_backups/backup_${SHA}.sql
+            #echo "Backup saved: db_backups/backup_${SHA}.sql"
 
             echo ""
             echo "Saving rollback image..."
