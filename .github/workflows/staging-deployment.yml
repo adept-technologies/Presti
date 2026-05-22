@@ -20,6 +20,7 @@ env:
 permissions:
   contents: read
   packages: write
+  security-events: write
 
 jobs:
   # ============================================================
@@ -176,9 +177,16 @@ jobs:
   # ============================================================
   zap-scan-staging:
     name: OWASP ZAP Full Scan (Staging)
-    runs-on: [ self-hosted, staging ]
+    runs-on: [self-hosted, staging]
     needs: smoke-tests
+    permissions:
+      security-events: write
     steps:
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+            -u ${{ github.repository_owner }} \
+            --password-stdin
       - name: Run ZAP Full Scan
         run: |
           chmod 777 $(pwd)
