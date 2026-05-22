@@ -182,7 +182,7 @@ jobs:
 
             cd ~/AI-ML-Lead-Gen
 
-            CURRENT_CONTAINER=$(docker compose \
+            CURRENT_CONTAINER=$(IMAGE_REF="$IMAGE_REF" docker compose \
               -p lead-gen \
               -f docker-compose.prod.yml \
               ps -q backend)
