@@ -3,7 +3,7 @@ name: Deploy to Staging
 # Assumes PRs have already been merged into main before this runs.
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "feature/auth0_integration_user_filter"]
   schedule:
     - cron: "0 12 * * 3"
   workflow_dispatch:
