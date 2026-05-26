@@ -4,7 +4,7 @@ import httpx
 from functools import wraps
 from quart import request, jsonify
 
-# Pull strictly from environment variables injected by Docker
+# Pull strictly from env variables injected by Docker
 AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
 API_AUDIENCE = os.getenv("AUTH0_API_AUDIENCE")
 ALGORITHMS = ["RS256"]
