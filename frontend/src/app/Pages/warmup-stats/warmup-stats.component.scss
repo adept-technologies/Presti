@@ -1,0 +1,241 @@
+.warmup-container {
+  display: grid;
+  padding: 24px;
+  color: var(--text-primary);
+  gap: 30px;
+
+  .page-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .account-id {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: 0.5px;
+    }
+
+    .account-email {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: 0.5px;
+    }
+  }
+
+  // ── KPI Cards ──────────────────────────────────────────────
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+
+    .kpi-card {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        border-radius: 12px 12px 0 0;
+      }
+
+      &.sent::before   { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+      &.inbox::before  { background: linear-gradient(90deg, #a855f7, #c084fc); }
+      &.received::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+      &.spam::before   { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+      &:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      .kpi-icon {
+        font-size: 1.6rem;
+        margin-bottom: 10px;
+      }
+
+      .kpi-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 10px;
+        text-transform: uppercase;
+      }
+
+      .kpi-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+
+        .sent & { color: #60a5fa; }
+        .inbox & { color: #c084fc; }
+        .received & { color: #fbbf24; }
+        .spam & { color: #f87171; }
+      }
+    }
+  }
+
+  // ── Table Card ─────────────────────────────────────────────
+  .table-card {
+    background: #111827;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+
+    h3 {
+      font-size: 1.1rem;
+      color: #ffffff;
+      margin: 0 0 20px 0;
+      font-weight: 600;
+      border-left: 4px solid var(--color-yellow, #facc15);
+      padding-left: 12px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+
+        thead tr {
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+          th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.45);
+          }
+        }
+
+        tbody tr {
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+          transition: background 0.15s ease;
+
+          &:last-child { border-bottom: none; }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.04);
+          }
+
+          td {
+            padding: 14px 16px;
+            color: var(--text-primary);
+          }
+
+          .date-cell {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+          }
+        }
+      }
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+
+      &.badge-sent {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+
+      &.badge-reply {
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+
+        &.zero {
+          background: rgba(255, 255, 255, 0.06);
+          color: rgba(255, 255, 255, 0.3);
+          border-color: rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      &.badge-spam {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+
+        &.zero {
+          background: rgba(255, 255, 255, 0.06);
+          color: rgba(255, 255, 255, 0.3);
+          border-color: rgba(255, 255, 255, 0.1);
+        }
+      }
+    }
+  }
+}
+
+// ── Loading State ─────────────────────────────────────────────
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: var(--text-primary);
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(250, 204, 21, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--text-primary);
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 20px;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .warmup-container {
+    padding: 16px;
+
+    .page-header h1 {
+      font-size: 1.4rem;
+    }
+
+    .kpi-row {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
