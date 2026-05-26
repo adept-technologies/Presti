@@ -17,6 +17,7 @@ from orchestration.scoring import score_and_store
 import httpx
 from utils.find_missing_people import find_missing_people
 from healthcheck import HealthCheck
+from outreach_module.smartlead.warmup_stats import get_warmup_stats
 
 #==============================APP SETUP====================================
 # Configure logging before creating quart app
@@ -94,6 +95,14 @@ async def get_config():
 # =============================================================================
 health = HealthCheck()
 app.add_url_rule('/health', 'health', view_func=lambda: health.run())
+
+# =============================================================================
+# SMARTLEAD WARMUP STATS
+# =============================================================================
+@app.route('/warmup-stats', methods=["GET"])
+async def warmup_stats():
+    return await get_warmup_stats()
+
 
 @app.route('/find-missing-people', methods=["GET", "POST"])
 async def get_missing_people():
