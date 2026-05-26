@@ -68,6 +68,11 @@ export class CompaniesService {
     return this.http.get(`${this.backend_url}/engagement-metrics`);
   }
 
+  // ✅ Fetch warmup stats from Smartlead
+  fetchWarmupStats(): Observable<any> {
+    return this.http.get(`${this.backend_url}/warmup-stats`);
+  }
+
   // ✅ Mapper function to structure company into sections
   mapCompanyToSections(company: ICompany): CompanySection[] {
     return [

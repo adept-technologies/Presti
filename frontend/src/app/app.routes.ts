@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './Pages/home/home.component';
 import { AnalyticsComponent } from './Pages/analytics/analytics.component';
+import { WarmupStatsComponent } from './Pages/warmup-stats/warmup-stats.component';
 import { LeadsTableComponent } from './@shared/Components/leads/leads.component';
 import { LeadsPageComponent } from './Pages/leads-page/leads-page.component';
 import { EventsComponent } from './Pages/events/events.component';
@@ -16,6 +17,11 @@ export const routes: Routes = [
     {
         path: 'analytics',
         component: AnalyticsComponent
+    },
+
+    {
+        path: 'warmup-stats',
+        component: WarmupStatsComponent
     },
 
     {

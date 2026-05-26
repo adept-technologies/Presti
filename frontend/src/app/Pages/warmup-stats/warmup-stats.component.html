@@ -1,0 +1,70 @@
+<div class="warmup-container" *ngIf="stats">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Warmup Stats</h1>
+    <span class="account-id">Account ID: {{ stats.id }}</span>
+    <span class="account-email">Account Email: {{"antony@adeptech.co.ke"}}</span>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-row">
+    <div class="kpi-card sent">
+      <div class="kpi-label">SENT COUNT</div>
+      <div class="kpi-value">{{ stats.sent_count }}</div>
+    </div>
+
+    <div class="kpi-card inbox">
+      <div class="kpi-label">INBOX COUNT</div>
+      <div class="kpi-value">{{ stats.inbox_count }}</div>
+    </div>
+
+    <div class="kpi-card received">
+      <div class="kpi-label">WARMUP EMAILS RECEIVED</div>
+      <div class="kpi-value">{{ stats.warmup_email_received_count }}</div>
+    </div>
+
+    <div class="kpi-card spam">
+      <div class="kpi-label">SPAM COUNT</div>
+      <div class="kpi-value">{{ stats.spam_count }}</div>
+    </div>
+  </div>
+
+  <!-- Stats By Date Table -->
+  <div class="table-card">
+    <h3>Stats by Date</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Sent Count</th>
+            <th>Reply Count</th>
+            <th>Save from Spam</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of statsByDateReversed">
+            <td class="date-cell">{{ row.date }}</td>
+            <td>
+              <span class="badge badge-sent">{{ row.sent_count }}</span>
+            </td>
+            <td>
+              <span class="badge badge-reply" [class.zero]="row.reply_count === 0">{{ row.reply_count }}</span>
+            </td>
+            <td>
+              <span class="badge badge-spam" [class.zero]="row.save_from_spam_count === 0">{{ row.save_from_spam_count }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Loading State -->
+<div class="loading-state" *ngIf="!stats">
+  <div class="spinner"></div>
+  <p>Loading Warmup Stats...</p>
+</div>
