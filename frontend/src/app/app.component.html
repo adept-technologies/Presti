@@ -1,5 +1,5 @@
 <div class="app-root">
-  <app-navbar></app-navbar>
+  <app-navbar *ngIf="auth.isAuthenticated$ | async"></app-navbar>
 
   <div class="router-outlet">
     <router-outlet></router-outlet>
