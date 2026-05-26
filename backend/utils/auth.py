@@ -59,10 +59,10 @@ def requires_auth(f):
         except Exception as e:
             return jsonify({"Error": f"Unable to parse authentication token: {str(e)}"}), 401
 
-        # Extract the email using the Audience first, then fallback to ideahub namespace
+        # Extract the email using the Audience first, then fallback to lead gen namespace
         payload['email'] = (
             payload.get(f'{API_AUDIENCE}/email') or
-            payload.get('https://ideahub.api/email') or
+            payload.get('https://adept.api/email') or
             ''
         )
         request.user = payload
