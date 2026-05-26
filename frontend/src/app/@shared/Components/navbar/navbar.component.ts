@@ -4,11 +4,13 @@ import { RouterLink } from '@angular/router';
 import { SearchService } from '../../Services/search.service';
 import { MatIconModule } from '@angular/material/icon';
 import { SettingsService } from '../../Services/settings.service';
+import { AuthService } from '@auth0/auth0-angular';
+import { AsyncPipe, NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [SearchBarComponent, RouterLink, MatIconModule],
+  imports: [SearchBarComponent, RouterLink, MatIconModule, AsyncPipe, NgIf],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss']
 })
@@ -18,7 +20,8 @@ export class NavbarComponent implements OnInit {
 
   constructor(
     private searchService: SearchService,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    public auth: AuthService
   ) {}
 
   ngOnInit() {
@@ -30,6 +33,14 @@ export class NavbarComponent implements OnInit {
   toggleTheme() {
     const newTheme = this.theme === 'dark' ? 'light' : 'dark';
     this.settingsService.updateSettings({ theme: newTheme });
+  }
+
+  login() {
+    this.auth.loginWithRedirect();
+  }
+
+  logout() {
+    this.auth.logout({ logoutParams: { returnTo: document.location.origin } });
   }
 
   onSearchChange(event: Event): void {
