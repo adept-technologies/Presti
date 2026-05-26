@@ -18,6 +18,7 @@ import httpx
 from utils.find_missing_people import find_missing_people
 from healthcheck import HealthCheck
 from outreach_module.smartlead.warmup_stats import get_warmup_stats
+from utils.auth import requires_auth
 
 #==============================APP SETUP====================================
 # Configure logging before creating quart app
@@ -81,6 +82,10 @@ def debug():
         "index_exists": os.path.exists(os.path.join(app.static_folder, "index.html"))
     }
 
+@app.route('/login', methods=['GET'])
+async def login_route():
+    return await send_from_directory(app.static_folder, "index.html")
+
 @app.route("/api/config", methods=["GET"])
 @app.route("/config", methods=["GET"])
 async def get_config():
@@ -105,6 +110,7 @@ async def warmup_stats():
 
 
 @app.route('/find-missing-people', methods=["GET", "POST"])
+@requires_auth
 async def get_missing_people():
     logger.info("Manual trigger: Discover and enrich missing people...")
     try:
@@ -117,6 +123,7 @@ async def get_missing_people():
         return jsonify({"Error": "An unexpected error occurred", "Message": str(e)}), 500
 
 @app.route('/run', methods=["GET", "POST"])
+@requires_auth
 async def main():
     try:
         # Run the pipeline in the background
@@ -131,6 +138,7 @@ async def outreach_task(org_ids):
             await outreach_main(pool, organization_ids=org_ids)
 
 @app.route('/outreach', methods=["POST"])
+@requires_auth
 async def trigger_outreach():
     logger.info("Manual trigger: Starting outreach...")
     try:
@@ -143,6 +151,7 @@ async def trigger_outreach():
 
 # For when the scoring algorithm changes
 @app.route('/rescore-all', methods=["POST"])
+@requires_auth
 async def rescore_all():
     logger.info("Manual trigger: Re-scoring all companies...")
     try:
@@ -162,6 +171,7 @@ async def rescore_all():
 
 #Database API for fetching companies
 @app.route('/fetch-companies', methods=["GET"])
+@requires_auth
 async def fetch_company_data():
     try:
         company_data = await fetch_companies()
@@ -171,6 +181,7 @@ async def fetch_company_data():
 
 #Database API for fetching people
 @app.route('/fetch-people', methods=["GET"])
+@requires_auth
 async def fetch_people_data():
     try:
         people_data = await fetch_people()
@@ -180,6 +191,7 @@ async def fetch_people_data():
 
 #Database API for fetching company details
 @app.route('/fetch-company-details/<id>', methods=["GET"])
+@requires_auth
 async def fetch_company_details_data(id):
     try:
         company_id = int(id)
@@ -240,6 +252,7 @@ async def sendgrid_events_webhook():
 
 #Endpoint to fetch events
 @app.route('/events', methods=["GET"])
+@requires_auth
 async def get_events():
     try:
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
@@ -253,6 +266,7 @@ async def get_events():
         return jsonify([]), 500
 
 @app.route('/keywords', methods=["GET"])
+@requires_auth
 async def get_keywords():
     try:
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
@@ -269,6 +283,7 @@ async def get_keywords():
         return jsonify({"Error": "An unexpected error occurred", "Message": str(e)}), 500
 
 @app.route('/export', methods=["GET"])
+@requires_auth
 async def export():
     try:
         companies = await fetch_companies()
@@ -280,6 +295,7 @@ async def export():
         return jsonify({"Error":"An unexpected error occured", "details": str(e)}), 500
 
 @app.route('/import-leads', methods=['POST'])
+@requires_auth
 async def import_leads():
     try:
         if 'file' not in request.files:
@@ -297,6 +313,7 @@ async def import_leads():
         return jsonify({"Error": "Failed to import file", "details": str(e)}), 500
 
 @app.route('/view-sent-emails/<company_id>', methods=["GET"])
+@requires_auth
 async def get_sent_emails(company_id):
     try:
         cid = int(company_id)
@@ -371,6 +388,7 @@ async def unsubscribe():
         }), 500
 
 @app.route('/save-note/<id>', methods=["POST"])
+@requires_auth
 async def save_note(id):
     try:
         data = await request.json
@@ -389,6 +407,7 @@ async def save_note(id):
         return jsonify({"Error": "An unexpected error occurred", "details": str(e)}), 500
 
 @app.route('/engagement-metrics', methods=["GET"])
+@requires_auth
 async def get_engagement_metrics():
     try:
         metrics = await fetch_engagement_metrics()
@@ -398,6 +417,7 @@ async def get_engagement_metrics():
         return jsonify({"Error": "Failed to fetch metrics", "Message": str(e)}), 500
 
 @app.route('/mark-replied/<id>', methods=["POST"])
+@requires_auth
 async def mark_replied(id):
     try:
         data = await request.json
@@ -412,6 +432,7 @@ async def mark_replied(id):
         return jsonify({"Error": "An unexpected error occurred", "details": str(e)}), 500
 
 @app.route('/mark-positive/<id>', methods=["POST"])
+@requires_auth
 async def mark_positive(id):
     try:
         data = await request.json
@@ -426,6 +447,7 @@ async def mark_positive(id):
         return jsonify({"Error": "An unexpected error occurred", "details": str(e)}), 500
 
 @app.route('/delete-note/<note_id>', methods=["DELETE"])
+@requires_auth
 async def delete_note(note_id):
     try:
         success = await delete_company_note(note_id)
