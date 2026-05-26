@@ -7,23 +7,35 @@
   </div>
 
   <!-- Navigation Menu -->
-  <div class="navbar-menu">
+  <div class="navbar-menu" *ngIf="auth.isAuthenticated$ | async">
     <a class="nav-link" routerLink="/">HOME</a>
     <a class="nav-link" routerLink="/leads">LEADS</a>
     <a class="nav-link" routerLink="/analytics">ANALYTICS</a>
+    <a class="nav-link" routerLink="/warmup-stats">WARMUP STATS</a>
     <a class="nav-link" routerLink="/settings">SETTINGS</a>
   </div>
 
   <div class="right-section">
     <!-- Search Bar -->
-    <div class="search-bar">
+    <div class="search-bar" *ngIf="auth.isAuthenticated$ | async">
       <app-search-bar></app-search-bar>
     </div>
     <div class="navbar-actions">
       <button class="theme-toggle" (click)="toggleTheme()">
         <mat-icon>{{ theme === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
+
+      <!-- Auth0 Logout -->
+      <ng-container *ngIf="auth.isAuthenticated$ | async">
+        <ng-container *ngIf="auth.user$ | async as user">
+          <div class="user-avatar" [title]="user.name || user.email || ''">
+            {{ (user.name || user.email || 'U').charAt(0).toUpperCase() }}
+          </div>
+        </ng-container>
+        <button class="nav-link" (click)="logout()" style="background: none; border: none; cursor: pointer; font-family: inherit; font-size: 1rem; font-weight: 500; margin-left: 10px;">LOGOUT</button>
+      </ng-container>
     </div>
   </div>
   
 </nav>
+

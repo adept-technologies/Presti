@@ -76,3 +76,32 @@
     color: var(--color-blue);
   }
 }
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-blue);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family-base);
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+
+  :host-context(.dark-theme) & {
+    color: #000000;
+    background-color: var(--color-yellow);
+  }
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(31, 175, 237, 0.4);
+  }
+}
+
