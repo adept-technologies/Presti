@@ -3,9 +3,9 @@ name: Deploy to Staging
 # Assumes PRs have already been merged into main before this runs.
 on:
   push:
-    branches: ["main"]
+    branches: ["dev"]
   pull_request:
-    branches: ["dev", "test/test_staging"]
+    branches: ["main", "dev"]
   schedule:
     - cron: "0 12 * * 3"
   workflow_dispatch:
