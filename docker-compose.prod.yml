@@ -33,6 +33,8 @@ services:
       DATABASE_URL: postgresql://lead_gen_user:lead_gen_password@db:5432/lead_gen_db
       GOOGLE_APPLICATION_CREDENTIALS: /app/service-account.json
       API_URL: https://lead-gen.adept-techno.co.ke
+      AUTH0_DOMAIN: dev-2685h5q7efjt6peh.us.auth0.com
+      AUTH0_API_AUDIENCE: https://api.presti
     volumes:
       - ./backend/service-account.json:/app/service-account.json
     depends_on:
