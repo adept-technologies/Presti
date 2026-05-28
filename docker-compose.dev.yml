@@ -28,7 +28,7 @@ services:
     environment:
       DATABASE_URL: postgresql://mock_lead_gen_user:mock_lead_gen_password@db:5432/mock_lead_gen_db
       GOOGLE_APPLICATION_CREDENTIALS: /app/service-account.json
-      API_URL: http://localhost:5050
+      API_URL: http://127.0.0.1:5050
       AUTH0_DOMAIN: dev-2685h5q7efjt6peh.us.auth0.com
       AUTH0_API_AUDIENCE: https://api.presti
     volumes:
