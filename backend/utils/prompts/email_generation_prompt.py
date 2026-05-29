@@ -1,6 +1,7 @@
-from utils.email_prompts import email_prompts
+from utils.email_prompts import email_prompts, role_guidelines
+from utils.title_classifier import classify_title
 
-def get_email_generation_prompt(company_description, first_name, company_name, trigger_type, sequence_number, funding_round=None, hiring_area=None, painpoints=None):
+def get_email_generation_prompt(company_description, first_name, company_name, trigger_type, sequence_number, funding_round=None, hiring_area=None, painpoints=None, recipient_title=None):
     """
     Generates a prompt for an LLM to create a highly personalized outreach email.
 
@@ -12,6 +13,7 @@ def get_email_generation_prompt(company_description, first_name, company_name, t
         funding_round (str, optional): The funding round (e.g., 'Series A'). Required if trigger_type is 'funding'.
         hiring_area (str, optional): The area/role they are hiring for (e.g., 'Data Science'). Required if trigger_type is 'hiring'.
         painpoints (list, optional): List of specific pain points identified for the company.
+        recipient_title (str, optional): Job title of the prospect.
     """
 
     # 1. Define the custom opening based on the trigger type
@@ -34,6 +36,10 @@ def get_email_generation_prompt(company_description, first_name, company_name, t
     else:
         raise ValueError("trigger_type must be 'funding' or 'hiring'")
 
+    # Classify title and retrieve relevant guidelines
+    role = classify_title(recipient_title)
+    guidelines = role_guidelines.get(role, role_guidelines["General"])
+    
     # 2. Return the consolidated prompt string
     prompt_template = email_prompts.get(sequence_number)
 
@@ -44,7 +50,8 @@ def get_email_generation_prompt(company_description, first_name, company_name, t
         growth_status=growth_status if growth_status else None,
         custom_opening=custom_opening if custom_opening else None,
         hiring_area=hiring_area if hiring_area else None,
-        painpoints="\n".join([f"- {p}" for p in painpoints]) if painpoints else "- general scaling bottlenecks"
+        painpoints="\n".join([f"- {p}" for p in painpoints]) if painpoints else "- general scaling bottlenecks",
+        role_guidelines=guidelines
     )
 
 if __name__ == "__main__":

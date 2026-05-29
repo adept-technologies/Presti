@@ -171,7 +171,8 @@ if __name__ == "__main__":
             sequence_number=seq_no,
             funding_round=fround,
             hiring_area=hiring_area,
-            painpoints=painpoints
+            painpoints=painpoints,
+            recipient_title="CFO"
         )
         
         try:
