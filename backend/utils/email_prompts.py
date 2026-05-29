@@ -1,3 +1,35 @@
+role_guidelines = {
+    "CEO": """
+    ### Target Persona: CEO (Chief Executive Officer)
+    - Focus: Purely high-level and strategic. Emphasize overall company growth, market acceleration, product-market velocity, and long-term vision.
+    - Tone: Visionary, peer-to-peer executive, concise. Do not talk about engineering implementation details or granular metrics.
+    - Solution/Outcome Alignment: Emphasize scaling speed, team capacity, and roadmap acceleration (e.g., "accelerate time-to-market by 40%", "unlock critical roadmap milestones").
+    """,
+    "CTO": """
+    ### Target Persona: CTO (Chief Technology Officer) / Engineering Leader
+    - Focus: High-level and strategic, but with technical detail. Emphasize roadmap velocity, engineering throughput, technical debt reduction, and modern software practices.
+    - Tone: Technical peer, professional, expert. Speak their language (e.g. "engineering velocity", "data pipelines", "infrastructure scalability").
+    - Solution/Outcome Alignment: Emphasize offloading non-core engineering overhead, accelerating deployment pipelines, or model accuracy validation (e.g., "improve deployment velocity by 3x", "free core developers from data bottlenecks").
+    """,
+    "CFO": """
+    ### Target Persona: CFO (Chief Financial Officer)
+    - Focus: High-level and strategic, but with cost optimization, efficiency, and ROI details. Emphasize cost predictability, budget optimization, overhead reduction, and staffing agility.
+    - Tone: Value-oriented, analytical, professional. Highlight the economic benefits of partnership.
+    - Solution/Outcome Alignment: Emphasize reducing talent acquisition cost, lowering OpEx, and getting high-quality output without hiring overhead (e.g., "reduce operational overhead by 40%", "predictable cost models").
+    """,
+    "Manager": """
+    ### Target Persona: Manager (Engineering Manager, Product Manager, Scrum Master)
+    - Focus: Functional, tactical, and execution-oriented. Emphasize team bandwidth support, sprint delivery, meeting timelines, reducing developer burnout, and solving concrete bottlenecks.
+    - Tone: Practical, supportive, collaborative.
+    - Solution/Outcome Alignment: Focus on immediate capacity relief, predictable sprint execution, and dedicated support (e.g., "onboard dedicated support in under 10 days", "unblock sprint capacity by 30+ hours weekly").
+    """,
+    "General": """
+    ### Target Persona: Business Lead
+    - Focus: General balance between strategic growth benefits and resource efficiency.
+    - Tone: Professional, outcome-oriented.
+    """
+}
+
 email_prompts = {
     1:  
     """
@@ -16,6 +48,8 @@ email_prompts = {
            - For Product companies: Focus on "accelerating your roadmap" and "offloading technical debt".
            - For Agencies: Focus on "increasing bench capacity" and "supporting client delivery".
         4. **Name Cleaning:** Use ONLY the core brand name. Strip suffixes like "Inc.", "Ltd.", or long descriptive taglines (e.g., use "Eleve Media" not "Eleve Media - An Influencer Marketing Platform Co.").
+        5. **Persona Guidelines:** Adjust focus, tone, and outcomes as per the following recipient profile:
+           {role_guidelines}
 
         ---
         ### Context & Services Offered (Your Company: Adept Technologies)
@@ -77,6 +111,8 @@ email_prompts = {
         1. **Acknowledge the model:** Was the first email too focused on product when they are an agency? Switch the angle.
         2. **Hiring Pulse:** If they are hiring, mention how the talent market for [Hiring Role] is tightening and how Adept provides an immediate "bench" to bridge the gap.
         3. **Name Cleaning:** Use ONLY the core brand name.
+        4. **Persona Guidelines:** Adjust focus, tone, and outcomes as per the following recipient profile:
+           {role_guidelines}
 
         ---
         ### Context & Services offered by Adept Technologies
@@ -117,6 +153,8 @@ email_prompts = {
         ### Analysis
         - Determine if their bottleneck is likely **talent acquisition** (long hiring cycles) or **operational overhead** (managing remote teams).
         - Name Cleaning: Strip all technical suffixes.
+        - Persona Guidelines: Adjust focus, tone, and outcomes as per the following recipient profile:
+          {role_guidelines}
 
         ---
         ### Prospect Data
@@ -160,6 +198,8 @@ email_prompts = {
         1. **Clean Name:** Ensure the company name is core-only.
         2. **One-Sentence Value:** Briefly restate how we help [Company Type] scale [Hiring Area] without the overhead.
         3. **CTA:** Make it zero-pressure.
+        4. **Persona Guidelines:** Adjust tone and outcomes as per the following recipient profile:
+           {role_guidelines}
 
         ### Email Output Template:
 ```html

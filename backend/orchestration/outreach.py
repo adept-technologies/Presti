@@ -59,6 +59,7 @@ async def process_person(person: Dict[str, Any], pool) -> bool:
     person_id = person.get("id")
     first_name = person.get("first_name")
     email = person.get("email", "")
+    title = person.get("title")
     org_apollo_id = person.get("organization_id", "")
     unsubscribe_token = person.get("unsubscribe_token", "")
     sequence_number = person.get("times_contacted", 0) + 1
@@ -104,7 +105,8 @@ async def process_person(person: Dict[str, Any], pool) -> bool:
         sequence_number=sequence_number,
         funding_round=funding_round,
         hiring_area=hiring_area,
-        painpoints=painpoints
+        painpoints=painpoints,
+        recipient_title=title
     )
 
     ai_response = await call_gemini_api(prompt)
