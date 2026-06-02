@@ -1,0 +1,187 @@
+<div class="settings-container p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md max-w-4xl mx-auto">
+  <h2 class="text-2xl font-bold mb-4" style="color: var(--text-primary);">Configure ICP Settings</h2>
+  <p class="mb-6 text-gray-600 dark:text-gray-300">Map different data points to scoring tiers to customize your Ideal Customer Profile.</p>
+
+  <div *ngIf="isLoading" class="text-center py-8">
+    <p>Loading settings...</p>
+  </div>
+
+  <form *ngIf="!isLoading" [formGroup]="icpForm" (ngSubmit)="onSubmit()" class="space-y-8">
+    <!-- Age Section -->
+    <section class="border p-4 rounded bg-gray-50 dark:bg-gray-700">
+      <h3 class="text-lg font-semibold mb-3">Company Age (Years)</h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm">100 Points</label>
+          <select formControlName="age_100" class="w-full p-2 border rounded">
+            <option *ngFor="let r of ageRanges" [value]="getRangeString(r)">{{r[0]}} - {{r[1]}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">70 Points</label>
+          <select formControlName="age_70" class="w-full p-2 border rounded">
+            <option *ngFor="let r of ageRanges" [value]="getRangeString(r)">{{r[0]}} - {{r[1]}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">50 Points</label>
+          <select formControlName="age_50" class="w-full p-2 border rounded">
+            <option *ngFor="let r of ageRanges" [value]="getRangeString(r)">{{r[0]}} - {{r[1]}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">30 Points</label>
+          <select formControlName="age_30" class="w-full p-2 border rounded">
+            <option *ngFor="let r of ageRanges" [value]="getRangeString(r)">{{r[0]}} - {{r[1]}}</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Employee Count Section -->
+    <section class="border p-4 rounded bg-gray-50 dark:bg-gray-700">
+      <h3 class="text-lg font-semibold mb-3">Employee Count</h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm">100 Points</label>
+          <select formControlName="emp_100" class="w-full p-2 border rounded">
+            <option *ngFor="let r of employeeRanges" [value]="getRangeString(r)">{{r[0]}} - {{r[1]}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">80 Points</label>
+          <select formControlName="emp_80" class="w-full p-2 border rounded">
+            <option *ngFor="let r of employeeRanges" [value]="getRangeString(r)">{{r[0]}} - {{r[1]}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">70 Points</label>
+          <select formControlName="emp_70" class="w-full p-2 border rounded">
+            <option *ngFor="let r of employeeRanges" [value]="getRangeString(r)">{{r[0]}} - {{r[1]}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">40 Points</label>
+          <select formControlName="emp_40" class="w-full p-2 border rounded">
+            <option *ngFor="let r of employeeRanges" [value]="getRangeString(r)">{{r[0]}} - {{r[1]}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">20 Points</label>
+          <select formControlName="emp_20" class="w-full p-2 border rounded">
+            <option *ngFor="let r of employeeRanges" [value]="getRangeString(r)">{{r[0]}} - {{r[1]}}</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Funding Stage Section -->
+    <section class="border p-4 rounded bg-gray-50 dark:bg-gray-700">
+      <h3 class="text-lg font-semibold mb-3">Funding Stage</h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm">100 Points</label>
+          <select formControlName="fund_100" class="w-full p-2 border rounded">
+            <option *ngFor="let s of fundingStages" [value]="s">{{s | uppercase}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">90 Points</label>
+          <select formControlName="fund_90" class="w-full p-2 border rounded">
+            <option *ngFor="let s of fundingStages" [value]="s">{{s | uppercase}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">50 Points</label>
+          <select formControlName="fund_50" class="w-full p-2 border rounded">
+            <option *ngFor="let s of fundingStages" [value]="s">{{s | uppercase}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">40 Points</label>
+          <select formControlName="fund_40" class="w-full p-2 border rounded">
+            <option *ngFor="let s of fundingStages" [value]="s">{{s | uppercase}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">30 Points</label>
+          <select formControlName="fund_30" class="w-full p-2 border rounded">
+            <option *ngFor="let s of fundingStages" [value]="s">{{s | uppercase}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">10 Points</label>
+          <select formControlName="fund_10" class="w-full p-2 border rounded">
+            <option *ngFor="let s of fundingStages" [value]="s">{{s | uppercase}}</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Industry Section -->
+    <section class="border p-4 rounded bg-gray-50 dark:bg-gray-700">
+      <h3 class="text-lg font-semibold mb-3">Industry</h3>
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="block text-sm">Tier 1 (100 Points)</label>
+          <select formControlName="ind_100" class="w-full p-2 border rounded">
+            <option *ngFor="let t of industryTiers; let i = index" [value]="i">{{getIndustryString(t)}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">Tier 2 (70 Points)</label>
+          <select formControlName="ind_70" class="w-full p-2 border rounded">
+            <option *ngFor="let t of industryTiers; let i = index" [value]="i">{{getIndustryString(t)}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm">Tier 3 (30 Points)</label>
+          <select formControlName="ind_30" class="w-full p-2 border rounded">
+            <option *ngFor="let t of industryTiers; let i = index" [value]="i">{{getIndustryString(t)}}</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Geography Section -->
+    <section class="border p-4 rounded bg-gray-50 dark:bg-gray-700">
+      <h3 class="text-lg font-semibold mb-3">Geography</h3>
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="block text-sm">Primary Targets (100 Points)</label>
+          <select formControlName="geo_100" class="w-full p-2 border rounded font-bold">
+            <option *ngFor="let r of geographyRegions" [value]="r.id">{{r.label}}</option>
+          </select>
+        </div>
+        <hr class="my-2 border-gray-300 dark:border-gray-600">
+        <p class="text-sm text-gray-500">Map remaining regions:</p>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm">85 Points</label>
+            <select formControlName="geo_85" class="w-full p-2 border rounded">
+              <option *ngFor="let r of geographyRegions" [value]="r.id">{{r.label}}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm">60 Points</label>
+            <select formControlName="geo_60" class="w-full p-2 border rounded">
+              <option *ngFor="let r of geographyRegions" [value]="r.id">{{r.label}}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm">50 Points</label>
+            <select formControlName="geo_50" class="w-full p-2 border rounded">
+              <option *ngFor="let r of geographyRegions" [value]="r.id">{{r.label}}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="flex justify-end pt-4">
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
+        Save ICP Settings
+      </button>
+    </div>
+  </form>
+</div>

@@ -1192,11 +1192,27 @@ async def fetch_engagement_metrics() -> Dict[str, Any]:
         if conn: await conn.close()
         return {}
 
+async def fetch_icp_settings(pool, auth0_id: str):
+    query = "SELECT settings FROM mock_icp_settings WHERE auth0_id = $1 LIMIT 1"
+
+    try:
+        async with pool.acquire(timeout=10.0) as conn:
+            results = conn.fetch(query, auth0_id)
+        logger.info(results)
+    except asyncpg.PostgresError as e:
+        logger.error(f"Database error while trying to fetch uncontacted people", str(e))
+        return []
+    except Exception as e:
+        logger.error(f"An unexpected error occured")
+        return []
+
+
 if __name__ == "__main__":
     async def main():
         logger.info(f"THE DB URL IS: {DB_URL}")
         async with asyncpg.create_pool(dsn=DB_URL, min_size=1, max_size=10) as pool:
             # x = await get_hiring_area("14.ai", pool)
+            print(fetch_icp_settings(pool, "12345"))
             pass
 
     asyncio.run(main())

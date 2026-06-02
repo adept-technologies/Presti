@@ -101,6 +101,11 @@ async def get_config():
 health = HealthCheck()
 app.add_url_rule('/health', 'health', view_func=lambda: health.run())
 
+
+@app.route("/settings/api", methods=["GET", "POST"])
+async def get_icp_settings():
+    return jsonify({"Success": "Tuko ndani"}), 200
+
 # =============================================================================
 # SMARTLEAD WARMUP STATS
 # =============================================================================
