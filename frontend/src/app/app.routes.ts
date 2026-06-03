@@ -69,6 +69,11 @@ export const routes: Routes = [
         component: SettingsComponent,
         canActivate: [customAuthGuard]
     },
+    {
+        path: 'settings/icp',
+        loadComponent: () => import('./Pages/settings/icp-config/icp-config.component').then(m => m.IcpConfigComponent),
+        canActivate: [customAuthGuard]
+    },
 
     {
         path: 'unsubscribe',
