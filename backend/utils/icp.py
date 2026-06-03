@@ -58,7 +58,7 @@ icp = {
         "western_eu_rest": (_WESTERN_EU_REST, 50),
     },
 
-    # Keep lightweight for now — not full outsourcing signals yet
+    # Keep lightweight for now. not full outsourcing signals yet
     "keywords": {
         "outsourcing_terms": 100,     # e.g. "contract", "agency", "outsource"
         "remote_hiring_terms": 70,    # e.g. "remote team", "distributed"
