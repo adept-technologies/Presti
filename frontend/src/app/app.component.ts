@@ -6,12 +6,13 @@ import { ModalService } from './@shared/Services/modal.service';
 import { IcpSettingsComponent } from './@shared/Components/settings/icp-settings/icp-settings.component';
 import { Subscription } from 'rxjs';
 import { NgIf, AsyncPipe } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '@auth0/auth0-angular';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavbarComponent, NgIf, AsyncPipe, IcpSettingsComponent],
+  imports: [RouterOutlet, NavbarComponent, NgIf, AsyncPipe, IcpSettingsComponent, RouterModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -33,6 +34,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.settingsService.loadSettings();
     this.modalVisible = this.modalService.visible$;
     this.modalPayload = this.modalService.payload$;
+    
+    // Debug: log when modal visibility or payload changes
+    this.modalVisible.subscribe((visible: boolean) => {
+      console.log('Modal visible changed to:', visible);
+    });
+    this.modalPayload.subscribe((payload: any) => {
+      console.log('Modal payload changed to:', payload);
+    });
   }
 
   ngOnInit() {

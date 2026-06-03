@@ -36,17 +36,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     // Wait until the user is authenticated to fetch settings (so AuthHttpInterceptor can attach the token)
     this.authSub = this.auth.isAuthenticated$.subscribe((isAuth) => {
       if (isAuth) {
-        this.icpService.getSettings().subscribe({
-          next: (res: any) => {
-            if (!res || !res.icp || Object.keys(res.icp).length === 0) {
-              // Show global modal hosted at AppComponent
-              this.modalService.show({ type: 'icp' });
-            }
-          },
-          error: (err: any) => {
-            console.error('Failed to fetch ICP settings', err);
-          }
-        });
+        // Use a dedicated helper so this can be called on login explicitly.
+        this.fetchUserSettings();
       }
     });
 
@@ -55,6 +46,26 @@ export class HomeComponent implements OnInit, OnDestroy {
     // Listen for saves from the global modal and refresh companies
     this.modalSavedSub = this.modalService.saved$.subscribe(() => {
       this.loadCompanies();
+    });
+  }
+
+  fetchUserSettings() {
+    this.icpService.getSettings().subscribe({
+      next: (res: any) => {
+        console.log('ICP Settings response:', res);
+        console.log('res.icp:', res?.icp);
+        console.log('Object.keys(res.icp).length:', Object.keys(res?.icp || {}).length);
+        if (!res || !res.icp || Object.keys(res.icp).length === 0) {
+          console.log('Showing modal because settings are empty');
+          // Show a simple blocking modal in the middle of the screen
+          this.modalService.show({ type: 'simple', data: { message: 'No ICP settings found' } });
+        } else {
+          console.log('Settings found, not showing modal');
+        }
+      },
+      error: (err: any) => {
+        console.error('Failed to fetch ICP settings', err);
+      }
     });
   }
 
