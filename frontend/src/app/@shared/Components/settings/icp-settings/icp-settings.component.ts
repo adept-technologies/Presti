@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormArray } from '@angular/forms';
 import { IcpSettingsService } from '../../../Services/icp-settings/icp-settings.service';
@@ -70,6 +70,8 @@ export class IcpSettingsComponent implements OnInit {
       keyword_30: [30]
     });
   }
+
+  @Output() saved: EventEmitter<void> = new EventEmitter();
 
   ngOnInit() {
     this.icpService.getSettings().subscribe({
@@ -160,8 +162,8 @@ export class IcpSettingsComponent implements OnInit {
 
     request.subscribe({
       next: () => {
-        alert('ICP Settings saved successfully!');
-        this.router.navigate(['/']); // Redirect to home or wherever
+        // Notify parent that settings were saved so modal can be closed
+        this.saved.emit();
       },
       error: (err: any) => {
         console.error(err);

@@ -1,28 +1,64 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { DataCardComponent } from "../../@shared/Components/data-card/data-card.component";
 import { DataFeedComponent } from "../../@shared/Components/data-feed/data-feed.component";
 import { LeadsTableComponent } from '../../@shared/Components/leads/leads.component';
 import { FilterComponent } from '../../@shared/Components/filter/filter.component';
-import { NgFor } from '@angular/common';
+import { NgFor, CommonModule, NgIf } from '@angular/common';
 import { CompaniesService } from '../../@shared/Services/companies.service';
 import { ICompany } from '../../Libs/interfaces/company.interface';
+import { IcpSettingsService } from '../../@shared/Services/icp-settings/icp-settings.service';
+import { ModalService } from '../../@shared/Services/modal.service';
+import { AuthService } from '@auth0/auth0-angular';
+import { Subscription } from 'rxjs';
+import { IcpSettingsComponent } from '../../@shared/Components/settings/icp-settings/icp-settings.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [DataCardComponent, FilterComponent, NgFor, LeadsTableComponent],
+  imports: [CommonModule, NgFor, NgIf, DataCardComponent, FilterComponent, LeadsTableComponent, IcpSettingsComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   leadData: ICompany[] = [];
   filteredLeads: ICompany[] = [];
   loading = true;
   statsVisible: any[] = [];
+  showIcpModal: boolean = false;
 
-  constructor(private companiesService: CompaniesService) { }
+  private authSub?: Subscription;
+  private modalSavedSub?: Subscription;
+
+  constructor(private companiesService: CompaniesService, private icpService: IcpSettingsService, private auth: AuthService, private modalService: ModalService) { }
 
   ngOnInit(): void {
+    // Check ICP settings and show modal if missing
+    // Wait until the user is authenticated to fetch settings (so AuthHttpInterceptor can attach the token)
+    this.authSub = this.auth.isAuthenticated$.subscribe((isAuth) => {
+      if (isAuth) {
+        this.icpService.getSettings().subscribe({
+          next: (res: any) => {
+            if (!res || !res.icp || Object.keys(res.icp).length === 0) {
+              // Show global modal hosted at AppComponent
+              this.modalService.show({ type: 'icp' });
+            }
+          },
+          error: (err: any) => {
+            console.error('Failed to fetch ICP settings', err);
+          }
+        });
+      }
+    });
+
+    this.loadCompanies();
+
+    // Listen for saves from the global modal and refresh companies
+    this.modalSavedSub = this.modalService.saved$.subscribe(() => {
+      this.loadCompanies();
+    });
+  }
+
+  loadCompanies() {
     this.loading = true;
     this.companiesService.fetch_companies().subscribe({
       next: (companies) => {
@@ -40,6 +76,21 @@ export class HomeComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    if (this.authSub) {
+      this.authSub.unsubscribe();
+    }
+    if (this.modalSavedSub) {
+      this.modalSavedSub.unsubscribe();
+    }
+  }
+
+  onIcpSaved() {
+    // Close the modal and refresh companies/stats
+    this.showIcpModal = false;
+    this.loadCompanies();
   }
 
   /** === SMART STATS WITH WEEKLY PROGRESS === **/

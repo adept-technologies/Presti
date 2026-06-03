@@ -101,10 +101,42 @@ async def get_config():
 health = HealthCheck()
 app.add_url_rule('/health', 'health', view_func=lambda: health.run())
 
+@app.route('/settings/icp', methods=['GET'])
+@requires_auth
+async def settings_get_icp():
+    """Return ICP settings for the logged-in user (by auth0 id).
+    If no settings found, return empty object with 200 so frontend can trigger modal.
+    """
+    try:
+        auth0_id = request.user.get('sub') or request.user.get('user_id') or request.user.get('sub')
+        async with asyncpg.create_pool(dsn=DB_URL) as pool:
+            settings = await fetch_icp_settings(pool, auth0_id)
+        return jsonify({'icp': settings or {}}), 200
+    except Exception as e:
+        logger.error(f"Failed to fetch ICP settings: {str(e)}")
+        return jsonify({'Error': 'Failed to fetch ICP settings', 'Message': str(e)}), 500
 
-@app.route("/settings/api", methods=["GET", "POST"])
-async def get_icp_settings():
-    return jsonify({"Success": "Tuko ndani"}), 200
+
+@app.route('/settings/icp', methods=['POST', 'PUT'])
+@requires_auth
+async def settings_upsert_icp():
+    """Create or update ICP settings for the logged-in user."""
+    try:
+        data = await request.json
+        if not data or 'icp' not in data:
+            return jsonify({'Error': 'Missing icp payload'}), 400
+
+        auth0_id = request.user.get('sub') or request.user.get('user_id') or request.user.get('sub')
+        async with asyncpg.create_pool(dsn=DB_URL) as pool:
+            success = await upsert_icp_settings(pool, auth0_id, data['icp'])
+
+        if success:
+            return jsonify({'Success': True}), 200
+        else:
+            return jsonify({'Error': 'Failed to save settings'}), 500
+    except Exception as e:
+        logger.error(f"Failed to upsert ICP settings: {str(e)}")
+        return jsonify({'Error': 'Failed to save settings', 'Message': str(e)}), 500
 
 # =============================================================================
 # SMARTLEAD WARMUP STATS
