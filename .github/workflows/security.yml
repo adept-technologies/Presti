@@ -39,7 +39,7 @@ jobs:
             --config p/javascript \
             --config p/typescript \
             --config p/python \
-            --config p/flask || true
+            --config p/quart || true
 
       - name: Upload Semgrep Results to GitHub Security Tab
         uses: github/codeql-action/upload-sarif@v4
@@ -66,7 +66,7 @@ jobs:
           # Confirm where we are 
           ls -a
 
-          # Spin up the database and the Flask backend
+          # Spin up the database and the Quart backend
           docker compose -f ./docker-compose.dev.yml up -d
 
       - name: Wait for Health Check

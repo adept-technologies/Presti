@@ -26,7 +26,7 @@ services:
     ports:
       - "5050:5050"
     environment:
-      DATABASE_URL: postgresql://mock_lead_gen_user:mock_lead_gen_password@db:5432/mock_lead_gen_db
+      #DATABASE_URL: postgresql://mock_lead_gen_user:mock_lead_gen_password@db:5432/mock_lead_gen_db
       GOOGLE_APPLICATION_CREDENTIALS: /app/service-account.json
       API_URL: http://127.0.0.1:5050
       AUTH0_DOMAIN: dev-2685h5q7efjt6peh.us.auth0.com

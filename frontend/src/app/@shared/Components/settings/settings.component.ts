@@ -5,10 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { SettingsService } from '../../Services/settings.service';
 import { ISettings } from '../../../Libs/interfaces/settings.interface';
 
+import { RouterModule } from '@angular/router';
+
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './settings.component.html'
 })
 export class SettingsComponent {

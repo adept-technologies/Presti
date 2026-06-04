@@ -32,7 +32,7 @@ The core idea is simple: signals from the outside world (a startup getting funde
 
 | Layer    | Technology                          |
 | -------- | ----------------------------------- |
-| Backend  | Python (Flask), asyncio, asyncpg    |
+| Backend  | Python (Quart), asyncio, asyncpg    |
 | Frontend | Angular                             |
 | Database | PostgreSQL                          |
 | Outreach | SendGrid                            |

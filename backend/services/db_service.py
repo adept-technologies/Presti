@@ -1192,11 +1192,59 @@ async def fetch_engagement_metrics() -> Dict[str, Any]:
         if conn: await conn.close()
         return {}
 
+async def fetch_icp_settings(pool, auth0_id: str):
+    query = "SELECT settings FROM mock_icp_settings WHERE auth0_id = $1 LIMIT 1"
+
+    conn = None
+    try:
+        conn = await pool.acquire(timeout=10.0)
+        row = await conn.fetchrow(query, auth0_id)
+        await pool.release(conn)
+        if row and 'settings' in row and row['settings'] is not None:
+            return row['settings']
+        return {}
+    except asyncpg.PostgresError as e:
+        logger.error(f"Database error while trying to fetch icp settings: {str(e)}")
+        if conn:
+            try: await pool.release(conn)
+            except Exception: pass
+        return {}
+    except Exception as e:
+        logger.error(f"An unexpected error occured while fetching icp settings: {str(e)}")
+        if conn:
+            try: await pool.release(conn)
+            except Exception: pass
+        return {}
+
+
+async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
+    """Insert or update ICP settings for a given auth0_id."""
+    query = """
+    INSERT INTO mock_icp_settings (auth0_id, settings, created_at, updated_at)
+    VALUES ($1, $2::jsonb, NOW(), NOW())
+    ON CONFLICT (auth0_id)
+    DO UPDATE SET settings = EXCLUDED.settings, updated_at = NOW();
+    """
+
+    conn = None
+    try:
+        async with pool.acquire(timeout=10.0) as conn:
+            await conn.execute(query, auth0_id, json.dumps(settings))
+        return True
+    except asyncpg.PostgresError as e:
+        logger.error(f"Database error while upserting icp settings: {str(e)}")
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error while upserting icp settings: {str(e)}")
+        return False
+
+
 if __name__ == "__main__":
     async def main():
         logger.info(f"THE DB URL IS: {DB_URL}")
         async with asyncpg.create_pool(dsn=DB_URL, min_size=1, max_size=10) as pool:
             # x = await get_hiring_area("14.ai", pool)
+            print(fetch_icp_settings(pool, "12345"))
             pass
 
     asyncio.run(main())
