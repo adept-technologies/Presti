@@ -89,6 +89,33 @@ import { RouterModule } from '@angular/router';
             margin-right: 8px;
             accent-color: var(--color-primary, #ffc107);
         }
+        /* Ensure dropdown text is white in dark mode and black in light mode */
+        :host-context(body.dark-theme) .custom-select-trigger,
+        :host-context(body.dark-theme) .custom-select-option,
+        :host-context(body.dark-theme) .dropdown-text {
+            color: #ffffff;
+        }
+        :host-context(body:not(.dark-theme)) .custom-select-trigger,
+        :host-context(body:not(.dark-theme)) .custom-select-option,
+        :host-context(body:not(.dark-theme)) .dropdown-text {
+            color: #000000;
+        }
+        /* Also handle native select/input elements within dropdowns */
+        :host-context(body.dark-theme) select,
+        :host-context(body.dark-theme) .custom-select-container select {
+            color: #ffffff;
+        }
+        :host-context(body:not(.dark-theme)) select,
+        :host-context(body:not(.dark-theme)) .custom-select-container select {
+            color: #000000;
+        }
+        /* Weights number inputs: white in dark mode, black in light mode */
+        :host-context(body.dark-theme) input[type="number"] {
+            color: #ffffff;
+        }
+        :host-context(body:not(.dark-theme)) input[type="number"] {
+            color: #000000;
+        }
         table {
             border: none !important;
             table-layout: fixed;
@@ -106,7 +133,7 @@ import { RouterModule } from '@angular/router';
         <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 700; margin-bottom: 24px;">Configure ICP</h2>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: start;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; align-items: start;">
                 
                 <!-- Age -->
                 <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
@@ -340,37 +367,37 @@ import { RouterModule } from '@angular/router';
                             <tr>
                                 <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Geography</td>
                                 <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_geography" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem); color: var(--text-primary);" />
+                                    <input formControlName="weight_geography" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
                                 </td>
                             </tr>
                             <tr>
                                 <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Funding</td>
                                 <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_funding_stage" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem); color: var(--text-primary);" />
+                                    <input formControlName="weight_funding_stage" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
                                 </td>
                             </tr>
                             <tr>
                                 <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Employees</td>
                                 <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_employee_count" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem); color: var(--text-primary);" />
+                                    <input formControlName="weight_employee_count" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
                                 </td>
                             </tr>
                             <tr>
                                 <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Age</td>
                                 <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_age" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem); color: var(--text-primary);" />
+                                    <input formControlName="weight_age" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
                                 </td>
                             </tr>
                             <tr>
                                 <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Industry</td>
                                 <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_industry" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem); color: var(--text-primary);" />
+                                    <input formControlName="weight_industry" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
                                 </td>
                             </tr>
                             <tr>
                                 <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Keywords</td>
                                 <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_keywords" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem); color: var(--text-primary);" />
+                                    <input formControlName="weight_keywords" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
                                 </td>
                             </tr>
                         </tbody>

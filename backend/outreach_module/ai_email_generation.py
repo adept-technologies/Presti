@@ -25,7 +25,7 @@ load_dotenv(verbose=True, override=True)
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "dummy-project-id")
 
 REGION = os.getenv("GCP_REGION", "us-central1")
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-2.5-flash"
 
 VERTEX_ENDPOINT = (
     f"https://{REGION}-aiplatform.googleapis.com/v1/"
@@ -172,7 +172,7 @@ if __name__ == "__main__":
             funding_round=fround,
             hiring_area=hiring_area,
             painpoints=painpoints,
-            recipient_title="CFO"
+            recipient_title="CTO"
         )
         
         try:
