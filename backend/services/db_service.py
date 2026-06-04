@@ -18,6 +18,8 @@ from utils.db_queries import (
     people_query
 )
 from utils.set_conversion import convert_sets
+from utils.icp import icp, weights
+from utils.locations import locations
 
 load_dotenv()  # Never override env vars already set by Docker Compose / the OS
 
@@ -1197,27 +1199,39 @@ async def fetch_icp_settings(pool, auth0_id: str):
 
     conn = None
     try:
-        conn = await pool.acquire(timeout=10.0)
-        row = await conn.fetchrow(query, auth0_id)
-        await pool.release(conn)
+        async with pool.acquire(timeout=10.0) as conn:
+            row = await conn.fetchrow(query, auth0_id)
         if row and 'settings' in row and row['settings'] is not None:
             return row['settings']
         return {}
     except asyncpg.PostgresError as e:
         logger.error(f"Database error while trying to fetch icp settings: {str(e)}")
-        if conn:
-            try: await pool.release(conn)
-            except Exception: pass
         return {}
     except Exception as e:
         logger.error(f"An unexpected error occured while fetching icp settings: {str(e)}")
-        if conn:
-            try: await pool.release(conn)
-            except Exception: pass
         return {}
 
 
 async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
+    resolved = {
+        "age": [tuple(entry) for entry in settings.get("age", icp["age"])],
+        "employee_count": [tuple(entry) for entry in settings.get("employee_count", icp["employee_count"])],
+        "funding_stage": settings.get("funding_stage", icp["funding_stage"]),
+        "industry": {
+            "tier_1": (icp["industry"]["tier_1"][0], settings["industry"]["tier_1"]),
+            "tier_2": (icp["industry"]["tier_2"][0], settings["industry"]["tier_2"]),
+            "tier_3": (icp["industry"]["tier_3"][0], settings["industry"]["tier_3"]),
+        },
+        "geography": {
+            "primary": (set(settings["geography"]["primary"][0]), settings["geography"]["primary"][1]),
+            "eastern_eu_wedge": (icp["geography"]["eastern_eu_wedge"][0], settings["geography"]["eastern_eu_wedge"]),
+            "north_america": (icp["geography"]["north_america"][0], settings["geography"]["north_america"]),
+            "western_eu_rest": (icp["geography"]["western_eu_rest"][0], settings["geography"]["western_eu_rest"]),
+        },
+        "keywords": settings.get("keywords", icp["keywords"]),
+        "weights": settings.get("weights", weights),
+    }
+
     """Insert or update ICP settings for a given auth0_id."""
     query = """
     INSERT INTO mock_icp_settings (auth0_id, settings, created_at, updated_at)
@@ -1244,7 +1258,7 @@ if __name__ == "__main__":
         logger.info(f"THE DB URL IS: {DB_URL}")
         async with asyncpg.create_pool(dsn=DB_URL, min_size=1, max_size=10) as pool:
             # x = await get_hiring_area("14.ai", pool)
-            print(fetch_icp_settings(pool, "12345"))
+            print(await fetch_icp_settings(pool, "auth0|6a0329e290f1881ac4d163b4"))
             pass
 
     asyncio.run(main())

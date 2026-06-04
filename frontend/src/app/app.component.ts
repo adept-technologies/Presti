@@ -35,13 +35,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.modalVisible = this.modalService.visible$;
     this.modalPayload = this.modalService.payload$;
     
-    // Debug: log when modal visibility or payload changes
-    this.modalVisible.subscribe((visible: boolean) => {
-      console.log('Modal visible changed to:', visible);
-    });
-    this.modalPayload.subscribe((payload: any) => {
-      console.log('Modal payload changed to:', payload);
-    });
   }
 
   ngOnInit() {

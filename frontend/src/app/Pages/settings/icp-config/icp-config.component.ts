@@ -594,8 +594,63 @@ export class IcpConfigComponent {
         return `${values.length} selected`;
     }
 
+    buildPayload() {
+        const f = this.form.value;
+        const parseRange = (v: string) => v.split(',').map(Number);
+
+        return {
+            age: [
+                [parseRange(f.age_100[0]), 100],
+                [parseRange(f.age_70[0]), 70],
+                [parseRange(f.age_50[0]), 50],
+                [parseRange(f.age_30[0]), 30],
+            ],
+            employee_count: [
+                [parseRange(f.emp_100[0]), 100],
+                [parseRange(f.emp_80[0]), 80],
+                [parseRange(f.emp_70[0]), 70],
+                [parseRange(f.emp_40[0]), 40],
+                [parseRange(f.emp_20[0]), 20],
+            ],
+            funding_stage: {
+                ...f.fund_100.reduce((acc: any, v: string) => ({ ...acc, [v]: 100 }), {}),
+                ...f.fund_90.reduce((acc: any, v: string) => ({ ...acc, [v]: 90 }), {}),
+                ...f.fund_50.reduce((acc: any, v: string) => ({ ...acc, [v]: 50 }), {}),
+                ...f.fund_40.reduce((acc: any, v: string) => ({ ...acc, [v]: 40 }), {}),
+                ...f.fund_30.reduce((acc: any, v: string) => ({ ...acc, [v]: 30 }), {}),
+                ...f.fund_10.reduce((acc: any, v: string) => ({ ...acc, [v]: 10 }), {}),
+            },
+            industry: {
+                tier_1: 100,
+                tier_2: 70,
+                tier_3: 30,
+            },
+            geography: {
+                primary: [f.geo_primary, 100],
+                eastern_eu_wedge: 85,
+                north_america: 60,
+                western_eu_rest: 50,
+            },
+            keywords: {
+                ...f.kw_outsource.reduce((acc: any, v: string) => ({ ...acc, [v]: 100 }), {}),
+                ...f.kw_remote.reduce((acc: any, v: string) => ({ ...acc, [v]: 70 }), {}),
+                ...f.kw_generic.reduce((acc: any, v: string) => ({ ...acc, [v]: 30 }), {}),
+            },
+            weights: {
+                geography: f.weight_geography,
+                funding_stage: f.weight_funding_stage,
+                employee_count: f.weight_employee_count,
+                age: f.weight_age,
+                industry: f.weight_industry,
+                keywords: f.weight_keywords,
+            }
+        };
+    }
+
     saveICPSettings(){
-        this.icpService.saveSettings(this.form.value).subscribe({
+        const payload = this.buildPayload();
+        console.log(payload);
+        this.icpService.saveSettings(payload).subscribe({
             next: (response) => alert("ICP settings saved!"),
             error: (err) => alert(`Failed to save ICP settings: ${err}`)
         })
