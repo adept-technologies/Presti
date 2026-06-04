@@ -19,11 +19,7 @@ export class IcpSettingsService {
     return this.http.get<any>(this.baseUrl);
   }
 
-  createSettings(data: any): Observable<any> {
-    return this.http.post<any>(this.baseUrl, data);
-  }
-
-  updateSettings(data: any): Observable<any> {
-    return this.http.put<any>(this.baseUrl, data);
+  saveSettings(data: any): Observable<any> {
+    return this.http.put<any>(this.baseUrl, {"icp": data});
   }
 }

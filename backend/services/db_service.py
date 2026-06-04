@@ -1228,21 +1228,14 @@ async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
 
     conn = None
     try:
-        conn = await pool.acquire()
-        await conn.execute(query, auth0_id, json.dumps(settings))
-        await pool.release(conn)
+        async with pool.acquire(timeout=10.0) as conn:
+            await conn.execute(query, auth0_id, json.dumps(settings))
         return True
     except asyncpg.PostgresError as e:
         logger.error(f"Database error while upserting icp settings: {str(e)}")
-        if conn:
-            try: await pool.release(conn)
-            except Exception: pass
         return False
     except Exception as e:
         logger.error(f"Unexpected error while upserting icp settings: {str(e)}")
-        if conn:
-            try: await pool.release(conn)
-            except Exception: pass
         return False
 
 

@@ -156,9 +156,7 @@ export class IcpSettingsComponent implements OnInit {
       }
     };
 
-    const request = this.isNew 
-      ? this.icpService.createSettings(payload)
-      : this.icpService.updateSettings(payload);
+    const request = this.icpService.saveSettings(payload);
 
     request.subscribe({
       next: () => {

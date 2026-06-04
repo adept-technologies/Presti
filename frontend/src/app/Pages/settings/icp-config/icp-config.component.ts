@@ -2,11 +2,13 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { ButtonComponent } from '../../../@shared/Components/button/button.component';
+import { IcpSettingsService } from '../../../@shared/Services/icp-settings/icp-settings.service';
 
 @Component({
     selector: 'app-icp-config',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, ButtonComponent],
     styles: [`
         :host {
             display: block;
@@ -132,7 +134,7 @@ import { RouterModule } from '@angular/router';
     <div style="width:100%; margin: 0; padding: 24px; box-sizing: border-box; overflow-x: hidden;">
         <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 700; margin-bottom: 24px;">Configure ICP</h2>
 
-        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <form [formGroup]="form">
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; align-items: start;">
                 
                 <!-- Age -->
@@ -406,7 +408,7 @@ import { RouterModule } from '@angular/router';
             </div>
 
             <div style="margin-top:32px; display:flex; gap:16px;">
-                <button type="submit" style="padding:10px 24px; background:#ffc107; color:#000; font-weight: 600; border-radius:6px; border:none; cursor:pointer;">Save</button>
+                <app-button [buttonText]="'Save'" [icon]="'visibility'" (click)="saveICPSettings()"> </app-button>
                 <a routerLink="/settings" style="padding:10px 24px; background:transparent; color:var(--text-primary); border-radius:6px; border:1px solid var(--border-color, rgba(0,0,0,0.2)); text-decoration:none;">Back</a>
             </div>
         </form>
@@ -515,7 +517,7 @@ export class IcpConfigComponent {
         { label: '30', control: 'kw_generic' }
     ];
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: FormBuilder, private icpService: IcpSettingsService) {
         this.form = this.fb.group({
             age_100: [['0,2']],
             age_70: [['3,5']],
@@ -592,9 +594,11 @@ export class IcpConfigComponent {
         return `${values.length} selected`;
     }
 
-    onSubmit() {
-        console.log('ICP settings submitted', this.form.value);
-        alert('ICP settings saved (local preview)');
+    saveICPSettings(){
+        this.icpService.saveSettings(this.form.value).subscribe({
+            next: (response) => alert("ICP settings saved!"),
+            error: (err) => alert(`Failed to save ICP settings: ${err}`)
+        })
     }
 }
 
