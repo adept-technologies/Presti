@@ -56,9 +56,10 @@ export class IcpSettingsComponent implements OnInit {
       fund_30: ['bootstrapped'],
       fund_10: ['series_b'],
 
-      ind_100: [0], // index of industryTiers
-      ind_70: [1],
-      ind_30: [2],
+      // index of industryTiers
+      ind_100: [this.industryTiers[0]],
+      ind_70: [this.industryTiers[1]],
+      ind_30: [this.industryTiers[2]],
 
       geo_100: ['primary'], // ID
       geo_85: ['eastern_eu'],
@@ -130,9 +131,9 @@ export class IcpSettingsComponent implements OnInit {
           [v.fund_10]: 10
         },
         industry: {
-          tier_1: [this.industryTiers[v.ind_100], 100],
-          tier_2: [this.industryTiers[v.ind_70], 70],
-          tier_3: [this.industryTiers[v.ind_30], 30]
+          tier_1: [v.ind_100, 100],
+          tier_2: [v.ind_70, 70],
+          tier_3: [v.ind_30, 30]
         },
         geography: {
           primary: [this.geographyRegions.find(r => r.id === v.geo_100)?.countries, 100],
@@ -155,7 +156,14 @@ export class IcpSettingsComponent implements OnInit {
         keywords: 0.05
       }
     };
+    console.log('industry values:', {
+      ind_100: v.ind_100,
+      ind_70: v.ind_70,
+      ind_30: v.ind_30
+    });
 
+console.log('payload:', JSON.stringify(payload, null, 2));
+    console.log(JSON.stringify(payload, null, 2));
     const request = this.icpService.saveSettings(payload);
 
     request.subscribe({

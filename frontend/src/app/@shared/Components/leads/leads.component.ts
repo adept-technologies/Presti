@@ -38,6 +38,8 @@ export class LeadsTableComponent implements OnInit {
   selectedRow: any = null;
   searchTerm: string = '';
   activeActionRow: number | null = null;
+  sortKey: string = '';
+  sortDirection: 'asc' | 'desc' | '' = '';
 
   //Reference to hidden file input
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
@@ -76,8 +78,25 @@ export class LeadsTableComponent implements OnInit {
     this.applyFiltersAndSearch();
   }
 
+  toggleSort(key: string) {
+    if (this.sortKey === key) {
+      if (this.sortDirection === 'asc') {
+        this.sortDirection = 'desc';
+      } else if (this.sortDirection === 'desc') {
+        this.sortDirection = '';
+        this.sortKey = '';
+      } else {
+        this.sortDirection = 'asc';
+      }
+    } else {
+      this.sortKey = key;
+      this.sortDirection = 'asc';
+    }
+    this.applyFiltersAndSearch();
+  }
+
   applyFiltersAndSearch() {
-    this.filteredData = this.data.filter(row => {
+    let temp = this.data.filter(row => {
       const matchesFilters = Object.keys(this.filters).every(key => {
         return !this.filters[key] || row[key] === this.filters[key];
       });
@@ -87,6 +106,26 @@ export class LeadsTableComponent implements OnInit {
         );
       return matchesFilters && matchesSearch;
     });
+
+    if (this.sortKey && this.sortDirection) {
+      temp.sort((a, b) => {
+        const valA = a[this.sortKey];
+        const valB = b[this.sortKey];
+
+        if (this.sortKey === 'icp_score') {
+          const numA = valA !== null && valA !== undefined ? Number(valA) : 0;
+          const numB = valB !== null && valB !== undefined ? Number(valB) : 0;
+          return this.sortDirection === 'asc' ? numA - numB : numB - numA;
+        } else if (this.sortKey === 'updated_at') {
+          const dateA = valA ? new Date(valA).getTime() : 0;
+          const dateB = valB ? new Date(valB).getTime() : 0;
+          return this.sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+        }
+        return 0;
+      });
+    }
+
+    this.filteredData = temp;
     this.currentPage = 1; // Reset to first page on filter/search change
   }
 

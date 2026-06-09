@@ -1,8 +1,8 @@
 import logging
 import asyncio
+import asyncpg
 from typing import Dict, Optional, Any
 from datetime import date
-from utils.icp import icp, weights
 from utils.ai_keywords import marking_scheme_keywords
 from scoring_module.keyword_scoring.keyword_scoring import TfIdfScorer
 
@@ -13,7 +13,7 @@ MAX_AGE = 10
 MAX_EMPLOYEE_COUNT = 100
 
 class ICPScorer:
-    def __init__(self, icp, name, founded_year=None, employee_count=None,
+    def __init__(self, icp, weights, name, founded_year=None, employee_count=None,
                  funding_stage=None, keywords=None,
                  people=None, phone=None, linkedin=None, website=None,
                  country=None, industry=None):
@@ -78,8 +78,8 @@ class ICPScorer:
         if not industry:
             return None
         industry = industry[0].lower().strip()
-        for tier, (industry_set, score) in self.icp["industry"].items():
-            if any(ind in industry for ind in industry_set):
+        for (industry_list, score) in self.icp["industry"]:
+            if any(industry in ind for ind in industry_list):
                 return score
         return 0
 
@@ -135,10 +135,16 @@ class ICPScorer:
 
 
 if __name__ == "__main__":
+    import os
+    from dotenv import load_dotenv
+    from services.db_service import fetch_icp_settings
+    load_dotenv()
+    DB_URL = os.getenv("MOCK_DATABASE_URL")
     async def main():
         from services.db_service import fetch_company_details
 
-        fetched_company = await fetch_company_details(468)
+        fetched_company = await fetch_company_details(428, "auth0|6a0329e290f1881ac4d163b4")
+        print(fetched_company)
 
         name = fetched_company.get('name')
         founded_year = fetched_company.get('founded_year')
@@ -151,8 +157,11 @@ if __name__ == "__main__":
         website = fetched_company.get('website_url', '')
         country = fetched_company.get('country', '')
         industry = fetched_company.get('industries', '')
+        async with asyncpg.create_pool(dsn=DB_URL, min_size=1, max_size=10) as pool:
+            icp = await fetch_icp_settings(pool, "auth0|6a0329e290f1881ac4d163b4")
+            weights = icp["weights"]
 
-        scorer = ICPScorer(icp, name, founded_year, employee_count,
+        scorer = ICPScorer(icp, weights, name, founded_year, employee_count,
                            funding_stage, keywords, people, phone,
                            linkedin, website, country, industry)
 

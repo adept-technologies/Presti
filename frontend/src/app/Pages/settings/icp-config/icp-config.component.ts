@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormControl } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ButtonComponent } from '../../../@shared/Components/button/button.component';
 import { IcpSettingsService } from '../../../@shared/Services/icp-settings/icp-settings.service';
@@ -9,6 +9,7 @@ import { IcpSettingsService } from '../../../@shared/Services/icp-settings/icp-s
     selector: 'app-icp-config',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, RouterModule, ButtonComponent],
+    templateUrl: './icp-config.component.html',
     styles: [`
         :host {
             display: block;
@@ -59,7 +60,7 @@ import { IcpSettingsService } from '../../../@shared/Services/icp-settings/icp-s
             top: 100%;
             left: 0;
             right: 0;
-            background: var(--bg-surface, #fff); /* Fallback for dark mode / light mode if vars missing */
+            background: var(--bg-surface, #fff);
             border: 1px solid #ccc;
             border-radius: 6px;
             margin-top: 4px;
@@ -68,7 +69,6 @@ import { IcpSettingsService } from '../../../@shared/Services/icp-settings/icp-s
             z-index: 1000;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        /* Adjust for potential dark mode container */
         :host-context(body.dark-theme) .custom-select-dropdown {
             background: #1e1e1e;
             border-color: #333;
@@ -91,7 +91,6 @@ import { IcpSettingsService } from '../../../@shared/Services/icp-settings/icp-s
             margin-right: 8px;
             accent-color: var(--color-primary, #ffc107);
         }
-        /* Ensure dropdown text is white in dark mode and black in light mode */
         :host-context(body.dark-theme) .custom-select-trigger,
         :host-context(body.dark-theme) .custom-select-option,
         :host-context(body.dark-theme) .dropdown-text {
@@ -102,7 +101,6 @@ import { IcpSettingsService } from '../../../@shared/Services/icp-settings/icp-s
         :host-context(body:not(.dark-theme)) .dropdown-text {
             color: #000000;
         }
-        /* Also handle native select/input elements within dropdowns */
         :host-context(body.dark-theme) select,
         :host-context(body.dark-theme) .custom-select-container select {
             color: #ffffff;
@@ -111,7 +109,6 @@ import { IcpSettingsService } from '../../../@shared/Services/icp-settings/icp-s
         :host-context(body:not(.dark-theme)) .custom-select-container select {
             color: #000000;
         }
-        /* Weights number inputs: white in dark mode, black in light mode */
         :host-context(body.dark-theme) input[type="number"] {
             color: #ffffff;
         }
@@ -129,293 +126,10 @@ import { IcpSettingsService } from '../../../@shared/Services/icp-settings/icp-s
         tr:hover, td:hover {
             background-color: transparent !important;
         }
-    `],
-    template: `
-    <div style="width:100%; margin: 0; padding: 24px; box-sizing: border-box; overflow-x: hidden;">
-        <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 700; margin-bottom: 24px;">Configure ICP</h2>
-
-        <form [formGroup]="form">
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; align-items: start;">
-                
-                <!-- Age -->
-                <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
-                    <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Age</div>
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="color: var(--text-primary);">
-                                <th style="padding: 8px; width: 60px;">Score</th>
-                                <th style="padding: 8px;">Years</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let c of ageControls">
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
-                                <td style="padding: 12px 8px;">
-                                    <div class="custom-select-container" (mouseleave)="activeDropdown = null" style="width: 100%;">
-                                        <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
-                                            <span class="dropdown-text">{{ getSelectionLabel(c.control, allAges) }}</span>
-                                        </div>
-                                        <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
-                                            <label class="custom-select-option" *ngFor="let opt of allAges">
-                                                <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
-                                                {{opt.label}}
-                                            </label>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Employee Count -->
-                <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
-                    <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Employee Count</div>
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="color: var(--text-primary);">
-                                <th style="padding: 8px; width: 60px;">Score</th>
-                                <th style="padding: 8px;">Count</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let c of employeeControls">
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
-                                <td style="padding: 12px 8px;">
-                                    <div class="custom-select-container" (mouseleave)="activeDropdown = null" style="width: 100%;">
-                                        <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
-                                            <span class="dropdown-text">{{ getSelectionLabel(c.control, allEmployees) }}</span>
-                                        </div>
-                                        <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
-                                            <label class="custom-select-option" *ngFor="let opt of allEmployees">
-                                                <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
-                                                {{opt.label}}
-                                            </label>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Funding Stage -->
-                <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
-                    <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Funding Stage</div>
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="color: var(--text-primary);">
-                                <th style="padding: 8px; width: 60px;">Score</th>
-                                <th style="padding: 8px;">Stage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let c of fundingControls">
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
-                                <td style="padding: 12px 8px;">
-                                    <div class="custom-select-container" (mouseleave)="activeDropdown = null" style="width: 100%;">
-                                        <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
-                                            <span class="dropdown-text">{{ getSelectionLabel(c.control, allFunding) }}</span>
-                                        </div>
-                                        <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
-                                            <label class="custom-select-option" *ngFor="let opt of allFunding">
-                                                <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
-                                                {{opt.label}}
-                                            </label>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Industry -->
-                <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
-                    <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Industry</div>
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="color: var(--text-primary);">
-                                <th style="padding: 8px; width: 60px;">Score</th>
-                                <th style="padding: 8px;">Industry</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let c of industryControls">
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
-                                <td style="padding: 12px 8px;">
-                                    <div class="custom-select-container" (mouseleave)="activeDropdown = null" style="width: 100%;">
-                                        <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
-                                            <span class="dropdown-text">{{ getSelectionLabel(c.control, allIndustries) }}</span>
-                                        </div>
-                                        <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
-                                            <label class="custom-select-option" *ngFor="let opt of allIndustries">
-                                                <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
-                                                {{opt.label}}
-                                            </label>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Geography -->
-                <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
-                    <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Geography</div>
-
-                    <!-- Primary Targets (Score 100) -->
-                    <div style="font-weight:500; font-size: 0.9rem; margin-bottom: 8px; color: var(--text-primary); opacity: 0.7;">Primary Targets</div>
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 16px;">
-                        <thead>
-                            <tr style="color: var(--text-primary);">
-                                <th style="padding: 8px; width: 60px;">Score</th>
-                                <th style="padding: 8px;">Country</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">100</td>
-                                <td style="padding: 12px 8px;">
-                                    <div class="custom-select-container" (mouseleave)="activeDropdown = null" style="width: 100%;">
-                                        <div class="custom-select-trigger" (click)="toggleDropdown('geo_primary')">
-                                            <span class="dropdown-text">{{ getSelectionLabel('geo_primary', primaryTargetCountries) }}</span>
-                                        </div>
-                                        <div class="custom-select-dropdown" *ngIf="activeDropdown === 'geo_primary'">
-                                            <label class="custom-select-option" *ngFor="let opt of primaryTargetCountries">
-                                                <input type="checkbox" [checked]="isChecked('geo_primary', opt.value)" (change)="toggleSelection('geo_primary', opt.value)">
-                                                {{opt.label}}
-                                            </label>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <!-- Regional Tiers (85, 60, 50) -->
-                    <div style="font-weight:500; font-size: 0.9rem; margin-bottom: 8px; color: var(--text-primary); opacity: 0.7;">Regional Tiers</div>
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="color: var(--text-primary);">
-                                <th style="padding: 8px; width: 60px;">Score</th>
-                                <th style="padding: 8px;">Region</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let c of geographyRegionControls">
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
-                                <td style="padding: 12px 8px;">
-                                    <div class="custom-select-container" (mouseleave)="activeDropdown = null" style="width: 100%;">
-                                        <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
-                                            <span class="dropdown-text">{{ getSelectionLabel(c.control, allRegions) }}</span>
-                                        </div>
-                                        <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
-                                            <label class="custom-select-option" *ngFor="let opt of allRegions">
-                                                <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
-                                                {{opt.label}}
-                                            </label>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Keywords -->
-                <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
-                    <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Keywords</div>
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="color: var(--text-primary);">
-                                <th style="padding: 8px; width: 60px;">Score</th>
-                                <th style="padding: 8px;">Terms</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let c of keywordControls">
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
-                                <td style="padding: 12px 8px;">
-                                    <div class="custom-select-container" (mouseleave)="activeDropdown = null" style="width: 100%;">
-                                        <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
-                                            <span class="dropdown-text">{{ getSelectionLabel(c.control, allKeywords) }}</span>
-                                        </div>
-                                        <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
-                                            <label class="custom-select-option" *ngFor="let opt of allKeywords">
-                                                <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
-                                                {{opt.label}}
-                                            </label>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Weights -->
-                <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
-                    <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Weights (must add up to 1)</div>
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                            <tr style="color: var(--text-primary);">
-                                <th style="padding: 8px; width: 80px;">Feature</th>
-                                <th style="padding: 8px;">Weight</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Geography</td>
-                                <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_geography" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Funding</td>
-                                <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_funding_stage" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Employees</td>
-                                <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_employee_count" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Age</td>
-                                <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_age" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Industry</td>
-                                <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_industry" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Keywords</td>
-                                <td style="padding: 12px 8px;">
-                                    <input formControlName="weight_keywords" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div style="margin-top:32px; display:flex; gap:16px;">
-                <app-button [buttonText]="'Save'" [icon]="'visibility'" (click)="saveICPSettings()"> </app-button>
-                <a routerLink="/settings" style="padding:10px 24px; background:transparent; color:var(--text-primary); border-radius:6px; border:1px solid var(--border-color, rgba(0,0,0,0.2)); text-decoration:none;">Back</a>
-            </div>
-        </form>
-    </div>
-    `
+    `]
 })
-export class IcpConfigComponent {
+export class IcpConfigComponent implements OnInit {
+
     form: FormGroup;
     activeDropdown: string | null = null;
 
@@ -464,9 +178,9 @@ export class IcpConfigComponent {
     ];
 
     allRegions = [
-        { label: 'Eastern Europe', value: 'eastern_europe' },
+        { label: 'Eastern Europe', value: 'eastern_eu_wedge' },
         { label: 'North America', value: 'north_america' },
-        { label: 'Western Europe', value: 'western_europe' }
+        { label: 'Western Europe', value: 'western_eu_rest' }
     ];
 
     allKeywords = [
@@ -537,14 +251,14 @@ export class IcpConfigComponent {
             fund_30: [['bootstrapped']],
             fund_10: [['series_b']],
 
-            industry_100: [['fintech']],
+            industry_100: [['fintech', 'ecommerce', 'saas']],
             industry_70: [['healthtech']],
             industry_30: [['education']],
 
             geo_primary: [['netherlands', 'germany', 'united kingdom', 'ireland']],
-            geo_eastern: [['eastern_europe']],
+            geo_eastern: [['eastern_eu_wedge']],
             geo_na: [['north_america']],
-            geo_west: [['western_europe']],
+            geo_west: [['western_eu_rest']],
 
             kw_outsource: [['outsourcing_terms']],
             kw_remote: [['remote_hiring_terms']],
@@ -557,6 +271,118 @@ export class IcpConfigComponent {
             weight_industry: [0.15],
             weight_keywords: [0.05]
         });
+    }
+
+    ngOnInit() {
+        this.icpService.getSettings().subscribe({
+            next: (res) => {
+                console.log('Loaded ICP settings', res);
+                const icp = res?.icp;
+                if (!icp) return;
+
+                const patch: any = {};
+
+                // --- Age: backend format is [[[min, max], score], ...]
+                if (Array.isArray(icp.age)) {
+                    icp.age.forEach(([range, score]: [[number, number], number]) => {
+                        const key = `${range[0]},${range[1]}`;
+                        const controlMap: Record<number, string> = { 100: 'age_100', 70: 'age_70', 50: 'age_50', 30: 'age_30' };
+                        const ctrl = controlMap[score];
+                        if (ctrl) patch[ctrl] = [key];
+                    });
+                }
+
+                // --- Employee Count: backend format is [[[min, max], score], ...]
+                if (Array.isArray(icp.employee_count)) {
+                    icp.employee_count.forEach(([range, score]: [[number, number], number]) => {
+                        const key = `${range[0]},${range[1]}`;
+                        const controlMap: Record<number, string> = {
+                            100: 'emp_100', 80: 'emp_80', 70: 'emp_70', 40: 'emp_40', 20: 'emp_20'
+                        };
+                        const ctrl = controlMap[score];
+                        if (ctrl) patch[ctrl] = [key];
+                    });
+                }
+
+                // --- Funding Stage: backend format is { stage_name: score, ... }
+                if (icp.funding_stage && typeof icp.funding_stage === 'object') {
+                    const fundingByScore: Record<number, string[]> = {};
+                    Object.entries(icp.funding_stage).forEach(([stage, score]) => {
+                        const s = score as number;
+                        if (!fundingByScore[s]) fundingByScore[s] = [];
+                        fundingByScore[s].push(stage);
+                    });
+                    const fundingControlMap: Record<number, string> = {
+                        100: 'fund_100', 90: 'fund_90', 50: 'fund_50',
+                        40: 'fund_40', 30: 'fund_30', 10: 'fund_10'
+                    };
+                    Object.entries(fundingByScore).forEach(([score, stages]) => {
+                        const ctrl = fundingControlMap[Number(score)];
+                        if (ctrl) patch[ctrl] = stages;
+                    });
+                }
+
+                // --- Industry: backend format is [[[industry1, industry2, ...], score], ...]
+                if (Array.isArray(icp.industry)) {
+                    icp.industry.forEach(([industries, score]: [string[], number]) => {
+                        const controlMap: Record<number, string> = { 100: 'industry_100', 70: 'industry_70', 30: 'industry_30' };
+                        const ctrl = controlMap[score];
+                        if (ctrl) patch[ctrl] = industries;
+                    });
+                }
+
+                // --- Geography: primary is [[countries], score], rest are flat key:score
+                if (icp.geography) {
+                    const geo = icp.geography;
+                    if (Array.isArray(geo.primary)) {
+                        // format: [[country1, country2, ...], score]
+                        patch['geo_primary'] = geo.primary[0];
+                    }
+                    // Regional tiers are stored by their backend key name directly
+                    if (geo.eastern_eu_wedge !== undefined) patch['geo_eastern'] = ['eastern_eu_wedge'];
+                    if (geo.north_america !== undefined)     patch['geo_na']      = ['north_america'];
+                    if (geo.western_eu_rest !== undefined)   patch['geo_west']    = ['western_eu_rest'];
+                }
+
+                // --- Keywords: backend format is { keyword_group: score, ... }
+                if (icp.keywords && typeof icp.keywords === 'object') {
+                    const kwByScore: Record<number, string[]> = {};
+                    Object.entries(icp.keywords).forEach(([kw, score]) => {
+                        const s = score as number;
+                        if (!kwByScore[s]) kwByScore[s] = [];
+                        kwByScore[s].push(kw);
+                    });
+                    const kwControlMap: Record<number, string> = {
+                        100: 'kw_outsource', 70: 'kw_remote', 30: 'kw_generic'
+                    };
+                    Object.entries(kwByScore).forEach(([score, kws]) => {
+                        const ctrl = kwControlMap[Number(score)];
+                        if (ctrl) patch[ctrl] = kws;
+                    });
+                }
+
+                // --- Weights
+                if (icp.weights) {
+                    patch['weight_geography']     = icp.weights.geography     ?? 0.30;
+                    patch['weight_funding_stage'] = icp.weights.funding_stage ?? 0.20;
+                    patch['weight_employee_count']= icp.weights.employee_count?? 0.15;
+                    patch['weight_age']           = icp.weights.age           ?? 0.15;
+                    patch['weight_industry']      = icp.weights.industry       ?? 0.15;
+                    patch['weight_keywords']      = icp.weights.keywords       ?? 0.05;
+                }
+
+                this.form.patchValue(patch);
+            },
+            error: (err) => console.error('Failed to load ICP settings', err)
+        });
+    }
+
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: MouseEvent) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.custom-select-container')) {
+            this.activeDropdown = null;
+        }
     }
 
     toggleDropdown(controlName: string) {
@@ -601,59 +427,58 @@ export class IcpConfigComponent {
         return {
             age: [
                 [parseRange(f.age_100[0]), 100],
-                [parseRange(f.age_70[0]), 70],
-                [parseRange(f.age_50[0]), 50],
-                [parseRange(f.age_30[0]), 30],
+                [parseRange(f.age_70[0]),  70],
+                [parseRange(f.age_50[0]),  50],
+                [parseRange(f.age_30[0]),  30],
             ],
             employee_count: [
                 [parseRange(f.emp_100[0]), 100],
-                [parseRange(f.emp_80[0]), 80],
-                [parseRange(f.emp_70[0]), 70],
-                [parseRange(f.emp_40[0]), 40],
-                [parseRange(f.emp_20[0]), 20],
+                [parseRange(f.emp_80[0]),  80],
+                [parseRange(f.emp_70[0]),  70],
+                [parseRange(f.emp_40[0]),  40],
+                [parseRange(f.emp_20[0]),  20],
             ],
             funding_stage: {
                 ...f.fund_100.reduce((acc: any, v: string) => ({ ...acc, [v]: 100 }), {}),
-                ...f.fund_90.reduce((acc: any, v: string) => ({ ...acc, [v]: 90 }), {}),
-                ...f.fund_50.reduce((acc: any, v: string) => ({ ...acc, [v]: 50 }), {}),
-                ...f.fund_40.reduce((acc: any, v: string) => ({ ...acc, [v]: 40 }), {}),
-                ...f.fund_30.reduce((acc: any, v: string) => ({ ...acc, [v]: 30 }), {}),
-                ...f.fund_10.reduce((acc: any, v: string) => ({ ...acc, [v]: 10 }), {}),
+                ...f.fund_90.reduce((acc: any, v: string) => ({ ...acc, [v]: 90  }), {}),
+                ...f.fund_50.reduce((acc: any, v: string) => ({ ...acc, [v]: 50  }), {}),
+                ...f.fund_40.reduce((acc: any, v: string) => ({ ...acc, [v]: 40  }), {}),
+                ...f.fund_30.reduce((acc: any, v: string) => ({ ...acc, [v]: 30  }), {}),
+                ...f.fund_10.reduce((acc: any, v: string) => ({ ...acc, [v]: 10  }), {}),
             },
-            industry: {
-                tier_1: 100,
-                tier_2: 70,
-                tier_3: 30,
-            },
+            industry: [
+                [f.industry_100, 100],
+                [f.industry_70,  70],
+                [f.industry_30,  30],
+            ],
             geography: {
-                primary: [f.geo_primary, 100],
+                primary:          [f.geo_primary, 100],
                 eastern_eu_wedge: 85,
-                north_america: 60,
-                western_eu_rest: 50,
+                north_america:    60,
+                western_eu_rest:  50,
             },
             keywords: {
                 ...f.kw_outsource.reduce((acc: any, v: string) => ({ ...acc, [v]: 100 }), {}),
-                ...f.kw_remote.reduce((acc: any, v: string) => ({ ...acc, [v]: 70 }), {}),
-                ...f.kw_generic.reduce((acc: any, v: string) => ({ ...acc, [v]: 30 }), {}),
+                ...f.kw_remote.reduce((acc: any, v: string)    => ({ ...acc, [v]: 70  }), {}),
+                ...f.kw_generic.reduce((acc: any, v: string)   => ({ ...acc, [v]: 30  }), {}),
             },
             weights: {
-                geography: f.weight_geography,
-                funding_stage: f.weight_funding_stage,
+                geography:      f.weight_geography,
+                funding_stage:  f.weight_funding_stage,
                 employee_count: f.weight_employee_count,
-                age: f.weight_age,
-                industry: f.weight_industry,
-                keywords: f.weight_keywords,
+                age:            f.weight_age,
+                industry:       f.weight_industry,
+                keywords:       f.weight_keywords,
             }
         };
     }
 
-    saveICPSettings(){
+    saveICPSettings() {
         const payload = this.buildPayload();
-        console.log(payload);
+        console.log('Saving ICP payload', payload);
         this.icpService.saveSettings(payload).subscribe({
-            next: (response) => alert("ICP settings saved!"),
+            next: () => alert('ICP settings saved!'),
             error: (err) => alert(`Failed to save ICP settings: ${err}`)
-        })
+        });
     }
 }
-

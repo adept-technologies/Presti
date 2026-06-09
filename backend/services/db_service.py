@@ -29,6 +29,24 @@ DB_URL = os.getenv("DATABASE_URL")
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+_PRIMARY_TARGETS = {"united kingdom", "ireland", "netherlands", "germany"}
+
+_EASTERN_EU_WEDGE = {
+    "albania", "bulgaria", "romania", "poland",
+    "croatia", "czech republic", "hungary", "slovakia",
+    "slovenia", "estonia", "latvia", "lithuania",
+    "bosnia and herzegovina", "kosovo", "montenegro",
+    "north macedonia", "serbia", "ukraine", "denmark",
+    "norway", "finland", "sweeden"
+}
+
+_WESTERN_EU_REST = {
+    c for c in locations.get("european countries")
+    if c not in _PRIMARY_TARGETS and c not in _EASTERN_EU_WEDGE
+}
+
+_NORTH_AMERICA = locations.get("north american countries")
+
 async def add_company_note(company_id: int, note_text: str) -> Dict[str, Any]:
     """Adds a new note for a company."""
     logger.info(f"Adding note for company ID {company_id}")
@@ -176,7 +194,7 @@ async def fetch_companies_temporary() -> List[Dict[str, Any]]:
                 pass # Ignore close errors
 
 
-async def fetch_companies() -> List[Dict[str, Any]]:
+async def fetch_companies(auth0_id: str) -> List[Dict[str, Any]]:
     """
     Fetches all companies and their associated people in a single query (Eager Loading)
     and correctly consolidates the denormalized join results into a nested structure.
@@ -185,7 +203,7 @@ async def fetch_companies() -> List[Dict[str, Any]]:
     Fetch all companies with associated people and notes in a single, scalable query.
     Uses JSON aggregation in Postgres to return one row per company.
     """
-    logger.info("Fetching companies from DB...")
+    logger.info(f"Fetching companies from DB for user: {auth0_id}...")
     conn = None
     try:
         conn = await asyncpg.connect(dsn=DB_URL)
@@ -193,6 +211,7 @@ async def fetch_companies() -> List[Dict[str, Any]]:
         company_query = """
         SELECT 
             c.*,
+            i.total_score AS user_icp_score,
             COALESCE(
                 json_agg(DISTINCT jsonb_build_object(
                     'full_name', p.full_name,
@@ -212,17 +231,19 @@ async def fetch_companies() -> List[Dict[str, Any]]:
             i.interpretation
         FROM mock_companies c
         LEFT JOIN mock_people p ON c.apollo_id = p.organization_id
-        LEFT JOIN mock_icp_scores i ON c.id = i.company_id
+        LEFT JOIN mock_icp_scores i ON c.id = i.company_id AND (i.auth0_id = $1 OR $1 IS NULL)
         LEFT JOIN mock_company_notes n ON c.id = n.company_id
-        GROUP BY c.id, i.top_matches, i.interpretation;
+        GROUP BY c.id, i.total_score, i.top_matches, i.interpretation;
         """
 
-        results = await conn.fetch(company_query)
+        results = await conn.fetch(company_query, auth0_id)
 
         # Convert asyncpg.Record -> dict for each company
         companies = []
         for r in results:
             d = dict(r)
+            if d.get('user_icp_score') is not None:
+                d['icp_score'] = d['user_icp_score']
             # Ensure JSON fields are parsed if they come back as strings
             for field in ['people', 'notes']:
                 if isinstance(d.get(field), str):
@@ -345,12 +366,12 @@ async def fetch_uncontacted_people(pool: asyncpg.Pool)->List:
         return []
 
 #Fetch company by ID
-async def fetch_company_details(id: int) -> Dict[str, Any]:
+async def fetch_company_details(id: int, auth0_id: str) -> Dict[str, Any]:
     """
     Fetch a single company by ID with its associated people and notes,
     using JSON aggregation to return one row per company.
     """
-    logger.info(f"Fetching company with ID: {id}")
+    logger.info(f"Fetching company with ID: {id} for user: {auth0_id}")
     conn = None
     try:
         conn = await asyncpg.connect(dsn=DB_URL)
@@ -358,6 +379,7 @@ async def fetch_company_details(id: int) -> Dict[str, Any]:
         query = """
         SELECT 
             c.*,
+            i.total_score AS user_icp_score,
             COALESCE(
                 json_agg(DISTINCT jsonb_build_object(
                     'full_name', p.full_name,
@@ -377,19 +399,21 @@ async def fetch_company_details(id: int) -> Dict[str, Any]:
             i.interpretation
         FROM mock_companies c
         LEFT JOIN mock_people p ON c.apollo_id = p.organization_id
-        LEFT JOIN mock_icp_scores i ON c.id = i.company_id
+        LEFT JOIN mock_icp_scores i ON c.id = i.company_id AND (i.auth0_id = $2 OR $2 IS NULL)
         LEFT JOIN mock_company_notes n ON c.id = n.company_id
         WHERE c.id = $1
-        GROUP BY c.id, i.top_matches, i.interpretation;
+        GROUP BY c.id, i.total_score, i.top_matches, i.interpretation;
         """
 
-        result = await conn.fetchrow(query, id)
+        result = await conn.fetchrow(query, id, auth0_id)
 
         await conn.close()
 
         if result:
             # Convert asyncpg.Record to dict
             d = dict(result)
+            if d.get('user_icp_score') is not None:
+                d['icp_score'] = d['user_icp_score']
             # Ensure JSON fields are parsed if they come back as strings
             for field in ['people', 'notes']:
                 if isinstance(d.get(field), str):
@@ -821,15 +845,28 @@ async def fetch_keywords(pool):
 
 #Select all unscored companies
 
-async def company_is_unscored(pool)->List[Dict[str, int]]:
-    logger.info("Fetching all unscored companies...")
+async def company_is_unscored(pool, auth0_id: str)->List[Dict[str, int]]:
+    logger.info(f"Fetching all unscored companies for user {auth0_id}...")
     
-    
-    query = "SELECT id FROM mock_companies WHERE icp_score IS NULL"
+    if auth0_id:
+        query = """
+        SELECT c.id 
+        FROM mock_companies c 
+        WHERE NOT EXISTS (
+            SELECT 1 
+            FROM mock_icp_scores s 
+            WHERE s.company_id = c.id AND s.auth0_id = $1
+        )
+        """
+    else:
+        query = "SELECT id FROM mock_companies WHERE icp_score IS NULL"
 
     try:
         async with pool.acquire() as conn:
-            results = await conn.fetch(query)
+            if auth0_id:
+                results = await conn.fetch(query, auth0_id)
+            else:
+                results = await conn.fetch(query)
             if results:
                 results_list = [dict(result) for result in results]
                 logger.info("Done fetching unscored companies")
@@ -842,11 +879,12 @@ async def company_is_unscored(pool)->List[Dict[str, int]]:
         logger.error(f"Failed to fetch unscored companies: {str(e)}")
         return []
 
+
 #Store icp score in icp_scores table
 async def store_icp_score(pool, company_id, age_score, employee_count_score,
                         funding_stage_score, keyword_score, contactability_score,
                         geography_score, industry_score, total_score, category_breakdown,
-                        top_matches, interpretation):
+                        top_matches, interpretation, auth0_id):
     category_breakdown = convert_sets(category_breakdown)
     category_breakdown_json = json.dumps(category_breakdown, indent=2)
     top_matches_json = json.dumps(top_matches, indent=2)
@@ -856,9 +894,9 @@ async def store_icp_score(pool, company_id, age_score, employee_count_score,
     INSERT INTO mock_icp_scores (
         company_id, age_score, employee_count_score, funding_stage_score, keyword_score,
         contactability_score, geography_score, industry_score, total_score, category_breakdown,
-        top_matches, interpretation
+        top_matches, interpretation, auth0_id
     ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
     )
     ON CONFLICT (company_id)
     DO UPDATE SET
@@ -872,14 +910,15 @@ async def store_icp_score(pool, company_id, age_score, employee_count_score,
         total_score = EXCLUDED.total_score,
         category_breakdown = EXCLUDED.category_breakdown,
         top_matches = EXCLUDED.top_matches,
-        interpretation = EXCLUDED.interpretation
+        interpretation = EXCLUDED.interpretation,
+        auth0_id = EXCLUDED.auth0_id
     """
     try:
         async with pool.acquire() as conn:
             await conn.execute(query, company_id, age_score, employee_count_score,
                             funding_stage_score, keyword_score, contactability_score,
                             geography_score, industry_score, total_score,
-                            category_breakdown_json, top_matches_json, interpretation)
+                            category_breakdown_json, top_matches_json, interpretation, auth0_id)
         logger.info("ICP score stored for company_id %s", company_id)
     except asyncpg.PostgresError as e:
         logger.error(f"Database error storing ICP score for company_id {company_id}: {str(e)}")
@@ -1202,7 +1241,7 @@ async def fetch_icp_settings(pool, auth0_id: str):
         async with pool.acquire(timeout=10.0) as conn:
             row = await conn.fetchrow(query, auth0_id)
         if row and 'settings' in row and row['settings'] is not None:
-            return row['settings']
+            return json.loads(row['settings'])
         return {}
     except asyncpg.PostgresError as e:
         logger.error(f"Database error while trying to fetch icp settings: {str(e)}")
@@ -1212,21 +1251,30 @@ async def fetch_icp_settings(pool, auth0_id: str):
         return {}
 
 
+# TO DO => fix the format of geography
 async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
     resolved = {
         "age": [tuple(entry) for entry in settings.get("age", icp["age"])],
         "employee_count": [tuple(entry) for entry in settings.get("employee_count", icp["employee_count"])],
         "funding_stage": settings.get("funding_stage", icp["funding_stage"]),
-        "industry": {
-            "tier_1": (icp["industry"]["tier_1"][0], settings["industry"]["tier_1"]),
-            "tier_2": (icp["industry"]["tier_2"][0], settings["industry"]["tier_2"]),
-            "tier_3": (icp["industry"]["tier_3"][0], settings["industry"]["tier_3"]),
-        },
+        "industry": [tuple(entry) for entry in settings.get("industry", icp["industry"])],
         "geography": {
-            "primary": (set(settings["geography"]["primary"][0]), settings["geography"]["primary"][1]),
-            "eastern_eu_wedge": (icp["geography"]["eastern_eu_wedge"][0], settings["geography"]["eastern_eu_wedge"]),
-            "north_america": (icp["geography"]["north_america"][0], settings["geography"]["north_america"]),
-            "western_eu_rest": (icp["geography"]["western_eu_rest"][0], settings["geography"]["western_eu_rest"]),
+            "primary": (
+                settings["geography"]["primary"][0], 
+                settings["geography"]["primary"][1]
+                ),
+            "eastern_eu_wedge": (
+                list(_EASTERN_EU_WEDGE),
+                settings["geography"]["eastern_eu_wedge"]
+                ),
+            "north_america": (
+                list(_NORTH_AMERICA), 
+                settings["geography"]["north_america"]
+                ),
+            "western_eu_rest": (
+                list(_WESTERN_EU_REST), 
+                settings["geography"]["western_eu_rest"]
+                ),
         },
         "keywords": settings.get("keywords", icp["keywords"]),
         "weights": settings.get("weights", weights),
@@ -1243,7 +1291,8 @@ async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
     conn = None
     try:
         async with pool.acquire(timeout=10.0) as conn:
-            await conn.execute(query, auth0_id, json.dumps(settings))
+            await conn.execute(query, auth0_id, json.dumps(resolved))
+        logger.info("Updated ICP settings for %s", auth0_id)
         return True
     except asyncpg.PostgresError as e:
         logger.error(f"Database error while upserting icp settings: {str(e)}")
@@ -1252,13 +1301,67 @@ async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
         logger.error(f"Unexpected error while upserting icp settings: {str(e)}")
         return False
 
-
 if __name__ == "__main__":
     async def main():
-        logger.info(f"THE DB URL IS: {DB_URL}")
+        settings = {
+            "age": [
+                [[0, 2], 100],
+                [[3, 5], 70],
+                [[6, 10], 50],
+                [[11, 20], 30]
+            ],
+
+            "employee_count": [
+                [[1, 5], 100],
+                [[6, 15], 80],
+                [[16, 20], 70],
+                [[21, 50], 40],
+                [[51, 100], 20]
+            ],
+
+            "funding_stage": {
+                "series_a": 100,
+                "seed": 90,
+                "pre_seed": 50,
+                "grant": 40,
+                "bootstrapped": 30,
+                "series_b": 10
+            },
+
+            "industry": [
+                [["fintech", "ecommerce", "saas"], 100],
+                [["healthtech", "insurtech"], 70],
+                [["education", "government"], 30]
+            ],
+
+            "geography": {
+                "primary": [
+                    ["united kingdom", "ireland", "netherlands", "germany"],
+                    100
+                ],
+                "eastern_eu_wedge": 85,
+                "north_america": 60,
+                "western_eu_rest": 50
+            },
+
+            "keywords": {
+                "outsourcing_terms": 100,
+                "remote_hiring_terms": 70,
+                "generic_terms": 30
+            },
+
+            "weights": {
+                "geography": 0.30,
+                "funding_stage": 0.20,
+                "employee_count": 0.15,
+                "age": 0.15,
+                "industry": 0.15,
+                "keywords": 0.05
+            }
+        }
         async with asyncpg.create_pool(dsn=DB_URL, min_size=1, max_size=10) as pool:
             # x = await get_hiring_area("14.ai", pool)
-            print(await fetch_icp_settings(pool, "auth0|6a0329e290f1881ac4d163b4"))
+            await upsert_icp_settings(pool, "auth0|6a0329e290f1881ac4d163b4", settings)
             pass
 
     asyncio.run(main())

@@ -17,6 +17,7 @@ import { AsyncPipe, NgIf } from '@angular/common';
 export class NavbarComponent implements OnInit {
   searchText: string = '';
   theme: string = 'dark';
+  settingsOpen: boolean = false;
 
   constructor(
     private searchService: SearchService,
@@ -33,6 +34,14 @@ export class NavbarComponent implements OnInit {
   toggleTheme() {
     const newTheme = this.theme === 'dark' ? 'light' : 'dark';
     this.settingsService.updateSettings({ theme: newTheme });
+  }
+
+  toggleSettings() {
+    this.settingsOpen = !this.settingsOpen;
+  }
+
+  closeSettings() {
+    this.settingsOpen = false;
   }
 
   login() {

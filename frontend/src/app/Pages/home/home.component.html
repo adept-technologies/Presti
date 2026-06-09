@@ -51,14 +51,5 @@
 -->
 </div>
 
-<!-- ICP settings modal (shown when user has not configured ICP) -->
-<div *ngIf="showIcpModal" class="fixed inset-0 flex items-center justify-center" style="background: rgba(0,0,0,0.5); z-index: 2147483647;">
-  <div role="dialog" aria-modal="true" aria-label="Configure ICP" class="bg-white rounded-lg w-11/12 max-w-3xl p-6 relative shadow-lg" style="max-height: 80vh; overflow: hidden;">
-    <button aria-label="Close" class="absolute top-2 right-2 text-gray-600" (click)="showIcpModal = false">✕</button>
-    <h2 class="text-xl font-bold mb-2">Configure your ICP</h2>
-    <p class="mb-4 text-sm text-gray-600">We couldn't find your ICP settings. Please fill them in so scoring and filtering works best for you.</p>
-    <div class="overflow-auto" style="max-height: 70vh;">
-      <app-icp-settings (saved)="onIcpSaved()"></app-icp-settings>
-    </div>
-  </div>
-</div>
+
+

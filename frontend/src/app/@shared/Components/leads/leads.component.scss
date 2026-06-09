@@ -4,43 +4,47 @@
 
   .lead-table {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden; /* never allow horizontal scroll */
 }
 
 .lead-table.preview {
-  //max-height: 400px; /* only in preview (home) */
   overflow-y: auto;
 }
 
 .lead-table.full {
-  max-height: none;  /* show all rows */
+  max-height: none;
   overflow-y: visible;
 }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      table-layout: fixed;
+      table-layout: fixed; /* honour the widths we set below */
       
       th, td {
-        padding: 12px;
+        padding: 10px 12px;
         border-top: 1px solid #ccc;
         border-bottom: 1px solid #ccc;
         border-left: none;
         border-right: none;
         text-align: left;
-        position: sticky;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        box-sizing: border-box;
       }
-      /* Minimize specific columns */
-      th:nth-child(1), td:nth-child(1) { width: 60px; text-align: center; } /* ID */
-      th:nth-child(2), td:nth-child(2) { width: 180px; } /* Company Name */
-      th:nth-child(3), td:nth-child(3) { width: 100px; } /* Status */
-      th:nth-child(4), td:nth-child(4) { width: 120px; } /* Date Updated */
-      th:nth-child(5), td:nth-child(5) { width: 80px; }  /* ICP Score */
-      th:nth-child(6), td:nth-child(6) { width: 100px; } /* Source */
-      th:nth-child(7), td:nth-child(7) { width: 220px; } /* Industry */
-      th:nth-child(8), td:nth-child(8) { width: 130px; } /* Contact Status */
-      th:nth-child(9), td:nth-child(9) { width: 160px; } /* Action */
+
+      /* ── Column widths (must sum to 100%) ── */
+      th:nth-child(1),  td:nth-child(1)  { width: 4%;  text-align: center; } /* # */
+      th:nth-child(2),  td:nth-child(2)  { width: 14%; } /* Company Name — capped */
+      th:nth-child(3),  td:nth-child(3)  { width: 8%;  } /* Status */
+      th:nth-child(4),  td:nth-child(4)  { width: 10%; } /* Date Updated */
+      th:nth-child(5),  td:nth-child(5)  { width: 7%;  } /* ICP Score */
+      th:nth-child(6),  td:nth-child(6)  { width: 8%;  } /* Source */
+      th:nth-child(7),  td:nth-child(7)  { width: 13%; } /* Industry */
+      th:nth-child(8),  td:nth-child(8)  { width: 8%;  } /* Service */
+      th:nth-child(9),  td:nth-child(9)  { width: 10%; } /* Contact Status */
+      th:nth-child(10), td:nth-child(10) { width: 18%; } /* Action */
 
       th {
         background-color: var(--bg-table, var(--color-black));
@@ -58,11 +62,11 @@
 
       tbody tr{
         width: 100%;
-        position: relative; /* Create stacking context for z-index */
+        position: relative;
       }
 
       tbody tr.active-row {
-        z-index: 50; /* Ensure active row is above others but below header */
+        z-index: 50;
       }
 
       tbody tr:hover{
@@ -93,6 +97,31 @@
 
 thead tr th{
   color: var(--text-primary);
+}
+
+.sortable-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--color-green, #1fedc3);
+  }
+
+  .sort-arrow {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+
+    .sort-placeholder {
+      opacity: 0.35;
+      font-size: 0.75rem;
+    }
+  }
 }
 
 .btn{

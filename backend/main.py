@@ -117,6 +117,31 @@ async def settings_get_icp():
         return jsonify({'Error': 'Failed to fetch ICP settings', 'Message': str(e)}), 500
 
 
+async def background_rescore_for_user(auth0_id: str):
+    logger.info("Background rescoring started for user: %s", auth0_id)
+    try:
+        async with asyncpg.create_pool(dsn=DB_URL) as pool:
+            from services.db_service import fetch_companies, fetch_icp_settings
+            from orchestration.scoring import score_and_store, normalize_icp
+            
+            companies = await fetch_companies(auth0_id)
+            if not companies:
+                logger.info("No companies found to re-score")
+                return
+                
+            icp_config = await fetch_icp_settings(pool, auth0_id)
+            icp = normalize_icp(icp_config)
+            if not icp or "weights" not in icp:
+                logger.error(f"No valid ICP settings found for user {auth0_id} to re-score.")
+                return
+                
+            semaphore = asyncio.Semaphore(20)
+            tasks = [score_and_store(pool, c.get("id"), semaphore, auth0_id, icp) for c in companies]
+            await asyncio.gather(*tasks, return_exceptions=True)
+            logger.info("Background rescoring finished for user: %s", auth0_id)
+    except Exception as e:
+        logger.error("Failed background rescoring for user %s: %s", auth0_id, str(e))
+
 @app.route('/settings/icp', methods=['POST', 'PUT'])
 @requires_auth
 async def settings_upsert_icp():
@@ -131,12 +156,14 @@ async def settings_upsert_icp():
             success = await upsert_icp_settings(pool, auth0_id, data['icp'])
 
         if success:
+            app.add_background_task(background_rescore_for_user, auth0_id)
             return jsonify({'Success': True}), 200
         else:
             return jsonify({'Error': 'Failed to save settings'}), 500
     except Exception as e:
         logger.error(f"Failed to upsert ICP settings: {str(e)}")
         return jsonify({'Error': 'Failed to save settings', 'Message': str(e)}), 500
+
 
 # =============================================================================
 # SMARTLEAD WARMUP STATS
@@ -163,8 +190,9 @@ async def get_missing_people():
 @requires_auth
 async def main():
     try:
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
         # Run the pipeline in the background
-        app.add_background_task(orchestration_main)
+        app.add_background_task(orchestration_main, auth0_id)
         return jsonify({"success": "Main function done"}), 200
     except Exception as e:
         return jsonify({"Error": "An unexpected error occured", "Message": str(e) }), 500
@@ -196,9 +224,14 @@ async def rescore_all():
         if not companies:
             return jsonify({"Message": "No companies found to score"}), 200
         
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
+            icp = await fetch_icp_settings(pool, auth0_id)
+            if not icp or not icp.get("icp"):
+                return jsonify({"Error": "No ICP settings found. Please configure ICP settings first."}), 400
+            icp_config = icp["icp"]
             semaphore = asyncio.Semaphore(10)
-            tasks = [score_and_store(pool, c.get("id"), semaphore) for c in companies]
+            tasks = [score_and_store(pool, c.get("id"), semaphore, auth0_id, icp_config) for c in companies]
             await asyncio.gather(*tasks)
             
         return jsonify({"Success": f"Re-scored {len(companies)} companies"}), 200
@@ -211,7 +244,8 @@ async def rescore_all():
 @requires_auth
 async def fetch_company_data():
     try:
-        company_data = await fetch_companies()
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
+        company_data = await fetch_companies(auth0_id)
     except Exception as e:
         return jsonify({"Error": "Failed to fetch companies", "Message": str(e)}), 500
     return jsonify(company_data), 200
@@ -235,7 +269,8 @@ async def fetch_company_details_data(id):
     except (ValueError, TypeError):
         return jsonify({'Error': 'Invalid company ID', 'Message': 'ID must be an integer'}), 400
     try:
-        company_details = await fetch_company_details(company_id)
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
+        company_details = await fetch_company_details(company_id, auth0_id)
         if not company_details:
             return jsonify({'Error': 'No company details found', "Message": "Company details list is empty"}), 404
         return jsonify(company_details), 200
@@ -323,7 +358,8 @@ async def get_keywords():
 @requires_auth
 async def export():
     try:
-        companies = await fetch_companies()
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
+        companies = await fetch_companies(auth0_id)
         exported_data = await export_to_excel(companies)
         if not exported_data:
             return jsonify({"Error": "No data to export"}), 400
@@ -342,7 +378,8 @@ async def import_leads():
         if file.filename == '':
             return jsonify({"Error": "No selected file"}), 400
 
-        await import_excel_main(file)
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
+        await import_excel_main(file, auth0_id)
         return jsonify({"Success": f"Done importing file {file.filename}"}), 200
 
     except Exception as e:
