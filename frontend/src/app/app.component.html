@@ -9,26 +9,17 @@
 <!-- Global modal host (top-level to avoid stacking context issues) -->
 <ng-container *ngIf="modalVisible | async">
     <div style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); z-index: 2147483647;">
-      <div style="background: var(--color-yellow); color: black; border-radius: 8px; width: 90%; max-width: 900px; padding: 24px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-height: 80vh; overflow: hidden;">
+      <div style="background: var(--color-yellow); color: black; border-radius: 8px; width: 90%; max-width: 500px; padding: 24px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
         <button aria-label="Close" style="position: absolute; top: 12px; right: 12px; border: none; background: transparent; font-size: 18px; cursor: pointer; color: black;" (click)="hideModal()">✕</button>
-        <ng-container *ngIf="$any(modalPayload | async)?.type === 'icp'">
-          <h2 class="text-xl font-bold mb-2" style="color: black;">Configure your ICP</h2>
-          <p class="mb-4 text-sm" style="color: black;">We couldn't find your ICP settings. Please fill them in so scoring and filtering works best for you.</p>
-          <div style="overflow: auto; max-height: 70vh;">
-            <app-icp-settings (saved)="onGlobalIcpSaved()"></app-icp-settings>
-          </div>
-      </ng-container>
-        <ng-container *ngIf="$any(modalPayload | async)?.type === 'simple'">
         <div class="p-8 text-center">
-          <h2 class="text-2xl font-bold mb-4" style="color: black;">{{ ($any(modalPayload | async)?.data?.message) || 'No settings found' }}</h2>
+          <h2 class="text-2xl font-bold mb-4" style="color: black;">{{ ($any(modalPayload | async)?.data?.message) || 'No ICP settings found' }}</h2>
           <p class="text-sm" style="color: black;">Please configure your ICP settings to continue.</p>
           <div class="mt-6">
             <a routerLink="/settings/icp" style="padding: 8px 16px; display:inline-block; background: black; color: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; text-decoration:none; font-weight:bold;" (click)="hideModal()">Configure</a>
           </div>
         </div>
-      </ng-container>
+      </div>
     </div>
-  </div>
 </ng-container>
 
 

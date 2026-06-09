@@ -18,7 +18,19 @@
         <tr>
           <th>ID</th>
           <th *ngFor="let column of columns">
-            {{ column.header }}
+            <span *ngIf="column.key === 'icp_score' || column.key === 'updated_at'; else regularHeader" 
+                  (click)="toggleSort(column.key)" 
+                  class="sortable-header">
+              {{ column.header }}
+              <span class="sort-arrow">
+                <span *ngIf="sortKey === column.key && sortDirection === 'asc'">▲</span>
+                <span *ngIf="sortKey === column.key && sortDirection === 'desc'">▼</span>
+                <span *ngIf="sortKey !== column.key || !sortDirection" class="sort-placeholder">⇅</span>
+              </span>
+            </span>
+            <ng-template #regularHeader>
+              {{ column.header }}
+            </ng-template>
           </th>
         </tr>
       </thead>

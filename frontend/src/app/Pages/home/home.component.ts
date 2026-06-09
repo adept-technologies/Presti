@@ -10,12 +10,12 @@ import { IcpSettingsService } from '../../@shared/Services/icp-settings/icp-sett
 import { ModalService } from '../../@shared/Services/modal.service';
 import { AuthService } from '@auth0/auth0-angular';
 import { Subscription } from 'rxjs';
-import { IcpSettingsComponent } from '../../@shared/Components/settings/icp-settings/icp-settings.component';
+
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, NgFor, NgIf, DataCardComponent, FilterComponent, LeadsTableComponent, IcpSettingsComponent],
+  imports: [CommonModule, NgFor, NgIf, DataCardComponent, FilterComponent, LeadsTableComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
@@ -24,7 +24,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   filteredLeads: ICompany[] = [];
   loading = true;
   statsVisible: any[] = [];
-  showIcpModal: boolean = false;
+
 
   private authSub?: Subscription;
   private modalSavedSub?: Subscription;
@@ -98,11 +98,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  onIcpSaved() {
-    // Close the modal and refresh companies/stats
-    this.showIcpModal = false;
-    this.loadCompanies();
-  }
+
 
   /** === SMART STATS WITH WEEKLY PROGRESS === **/
   calculateStats() {

@@ -16,7 +16,7 @@ DB_URL = os.getenv("DATABASE_URL")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def main():
+async def main(auth0_id: str = ""):
 
     # ===========QUEUE CREATION ===============
     ingestion_to_normalization_queue = asyncio.Queue()
@@ -52,7 +52,8 @@ async def main():
         )
 
         await scoring_main(
-            pool
+            pool,
+            auth0_id
         )
 
         await outreach_main(

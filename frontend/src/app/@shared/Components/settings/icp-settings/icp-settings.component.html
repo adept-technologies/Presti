@@ -125,19 +125,19 @@
         <div>
           <label class="block text-sm">Tier 1 (100 Points)</label>
           <select formControlName="ind_100" class="w-full p-2 border rounded">
-            <option *ngFor="let t of industryTiers; let i = index" [value]="i">{{getIndustryString(t)}}</option>
+            <option *ngFor="let t of industryTiers; " [ngValue]="t">{{getIndustryString(t)}}</option>
           </select>
         </div>
         <div>
           <label class="block text-sm">Tier 2 (70 Points)</label>
           <select formControlName="ind_70" class="w-full p-2 border rounded">
-            <option *ngFor="let t of industryTiers; let i = index" [value]="i">{{getIndustryString(t)}}</option>
+            <option *ngFor="let t of industryTiers; " [ngValue]="t">{{getIndustryString(t)}}</option>
           </select>
         </div>
         <div>
           <label class="block text-sm">Tier 3 (30 Points)</label>
           <select formControlName="ind_30" class="w-full p-2 border rounded">
-            <option *ngFor="let t of industryTiers; let i = index" [value]="i">{{getIndustryString(t)}}</option>
+            <option *ngFor="let t of industryTiers; " [ngValue]="t">{{getIndustryString(t)}}</option>
           </select>
         </div>
       </div>

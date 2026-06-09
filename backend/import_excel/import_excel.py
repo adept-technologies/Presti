@@ -142,7 +142,7 @@ def create_normalized_data(file):
 
 # ========ENRICH, SCORE, STORE, OUTREACH==========
 
-async def main(file=None):
+async def main(file=None, auth0_id: str = ""):
     if file is None:
         logger.error("No file provided to import_excel.main")
         return
@@ -230,7 +230,8 @@ async def main(file=None):
         )
 
         await scoring_main(
-            pool
+            pool,
+            auth0_id
         )
 
         await outreach_main(
