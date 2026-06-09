@@ -226,14 +226,8 @@ _Insert change history here_
 
 This section is a to-do list for me as the programmer.
 
-- See if I can get event attendees on eventbrite
-- Fix keyword scoring to only include services we provide
 - Check if funded company is hiring and if hiring company has been funded
-- Implement drip feeding
-- Migrate from sendgrid to apollo
-- Integrate with odoo
-
-- Nodesk, working_nomads => Unknown company name
+- ADD A SPINNER/LOADER SHOWING RE-SCORING COMPANIES AFTER ICP CHANGE
 
 CREATE TABLE IF NOT EXISTS mock_icp_settings (
 id SERIAL PRIMARY KEY,

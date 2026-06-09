@@ -4,7 +4,7 @@ import httpx
 import asyncio
 import asyncpg
 import logging
-from typing import List
+from typing import List, Any
 from dotenv import load_dotenv
 from utils.data_structures.news_data_structure import fetched_funding_data
 from openpyxl import load_workbook
@@ -159,9 +159,9 @@ async def main(file=None, auth0_id: str = ""):
     #logger.info("RESULTS: %r", results)
 
     # ===========QUEUE CREATION ===============
-    normalization_to_enrichment= asyncio.Queue()
-    normalization_to_storage= asyncio.Queue()
-    enrichment_to_storage_queue = asyncio.Queue()
+    normalization_to_enrichment: asyncio.Queue[Any] = asyncio.Queue()
+    normalization_to_storage: asyncio.Queue[Any] = asyncio.Queue()
+    enrichment_to_storage_queue: asyncio.Queue[Any] = asyncio.Queue()
 
     await normalization_to_enrichment.put(normalized_data)
     await normalization_to_storage.put(normalized_data)
@@ -179,9 +179,9 @@ async def main(file=None, auth0_id: str = ""):
             enrichment_items.append(await enrichment_module_queue.get())
         
         # Queue for painpoints AI call
-        enrichment_for_painpoints = asyncio.Queue()
+        enrichment_for_painpoints: asyncio.Queue[Any] = asyncio.Queue()
         # Queue for storage main
-        enrichment_for_storage = asyncio.Queue()
+        enrichment_for_storage: asyncio.Queue[Any] = asyncio.Queue()
         
         for item in enrichment_items:
             await enrichment_for_painpoints.put(item)

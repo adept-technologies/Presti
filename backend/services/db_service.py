@@ -194,7 +194,7 @@ async def fetch_companies_temporary() -> List[Dict[str, Any]]:
                 pass # Ignore close errors
 
 
-async def fetch_companies(auth0_id: str = None) -> List[Dict[str, Any]]:
+async def fetch_companies(auth0_id: str) -> List[Dict[str, Any]]:
     """
     Fetches all companies and their associated people in a single query (Eager Loading)
     and correctly consolidates the denormalized join results into a nested structure.
@@ -845,7 +845,7 @@ async def fetch_keywords(pool):
 
 #Select all unscored companies
 
-async def company_is_unscored(pool, auth0_id: str = None)->List[Dict[str, int]]:
+async def company_is_unscored(pool, auth0_id: str)->List[Dict[str, int]]:
     logger.info(f"Fetching all unscored companies for user {auth0_id}...")
     
     if auth0_id:
@@ -1299,23 +1299,6 @@ async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
         return False
     except Exception as e:
         logger.error(f"Unexpected error while upserting icp settings: {str(e)}")
-        return False
-
-async def fetch_all_users_with_icp(pool: asyncpg.Pool) -> List[Dict[str, Any]]:
-    query = "SELECT auth0_id, settings FROM mock_icp_settings"
-    try:
-        async with pool.acquire(timeout=10.0) as conn:
-            rows = await conn.fetch(query)
-            if rows:
-                return [{"auth0_id": row["auth0_id"], "settings": row["settings"]} for row in rows]
-            else:
-                return []
-            logger.info("Found users with icp")
-    except asyncpg.PostgresError as e:
-        logger.error(f"Database error while fetching all users with icp: {str(e)}")
-        return False
-    except Exception as e:
-        logger.error(f"Unexpected error while fetching all users with icp: {str(e)}")
         return False
 
 if __name__ == "__main__":

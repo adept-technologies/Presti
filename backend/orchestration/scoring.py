@@ -4,7 +4,7 @@ import asyncpg
 import json
 from typing import Dict, Any
 from scoring_module.icp_scoring import ICPScorer
-from services.db_service import fetch_company_details, store_icp_score, update_company_icp_score, company_is_unscored
+from services.db_service import fetch_company_details, store_icp_score, update_company_icp_score, company_is_unscored, fetch_icp_settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -84,27 +84,19 @@ async def score_user(pool: asyncpg.Pool, auth0_id: str, icp_raw, semaphore: asyn
         if isinstance(result, Exception):
             logger.error(f"Scoring failed for user={auth0_id} company_id={company_id}: {result}")
 
-async def main(pool: asyncpg.Pool, auth0_id: str = None):
-    from services.db_service import fetch_all_users_with_icp, fetch_icp_settings
+async def main(pool: asyncpg.Pool, auth0_id: str):
     logger.info("Scoring companies...")
 
     # one semaphore shared across ALL users and ALL companies
     # caps total concurrent DB/API operations regardless of user count
     semaphore = asyncio.Semaphore(20)
 
-    if auth0_id:
-        # Score only for the specified user
-        icp_config = await fetch_icp_settings(pool, auth0_id)
-        if icp_config:
-            await score_user(pool, auth0_id, icp_config, semaphore)
-        else:
-            logger.error(f"No ICP settings found for user {auth0_id}. Aborting scoring.")
+    # Score only for the specified user
+    icp_config = await fetch_icp_settings(pool, auth0_id)
+    if icp_config:
+        await score_user(pool, auth0_id, icp_config, semaphore)
     else:
-        # Score for all users in the system
-        users = await fetch_all_users_with_icp(pool)
-        logger.info(f"Scoring for {len(users)} users")
-        user_tasks = [score_user(pool, user["auth0_id"], user["settings"], semaphore) for user in users]
-        await asyncio.gather(*user_tasks, return_exceptions=True)
+        logger.error(f"No ICP settings found for user {auth0_id}. Aborting scoring.")
 
     logger.info("ICP Scoring Done")
 
