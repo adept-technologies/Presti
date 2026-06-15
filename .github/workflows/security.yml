@@ -63,6 +63,9 @@ jobs:
           # Create a dummy service account file so the Docker volume mount doesn't crash
           echo "{}" > ./backend/service-account.json
 
+          # Create a dummy .env file so Docker Compose doesn't crash on missing env_file
+          touch ./backend/.env
+
           # Confirm where we are 
           ls -a
 
