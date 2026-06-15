@@ -41,7 +41,9 @@ app.logger.propagate = True #Use our configured logger
 
 allowed_origins = [
     "http://localhost:4200",
+    "http://localhost:5050",
     "http://127.0.0.1:4200",
+    "http://127.0.0.1:5050",
     "http://20.121.43.237",
     "http://192.168.1.250:5050"
     "http://lead-gen.adept-techno.co.ke",
