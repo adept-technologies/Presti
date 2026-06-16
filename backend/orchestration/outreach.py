@@ -32,9 +32,10 @@ RETRY_LIMIT_PER_DAY = 500
 async def fetch_people_for_discovery(
     pool,
     organization_ids: Optional[List[str]] = None,
+    limit: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     logger.info(f"Fetching discovery people (scoped to {len(organization_ids) if organization_ids else 'ALL'} orgs)")
-    return await fetch_eligible_people(pool, organization_ids=organization_ids)
+    return await fetch_eligible_people(pool, organization_ids=organization_ids, limit=limit)
 
 
 async def fetch_people_for_retry(
@@ -42,8 +43,7 @@ async def fetch_people_for_retry(
     limit: int,
 ) -> List[Dict[str, Any]]:
     logger.info("Fetching retry people (global backlog)")
-    people = await fetch_eligible_people(pool, organization_ids=None)
-    return people[:limit]
+    return await fetch_eligible_people(pool, organization_ids=None, limit=limit)
 
 
 # ---------------------------------------------------------
@@ -269,12 +269,14 @@ def dedupe_people(people: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 async def main(
     pool,
     organization_ids: Optional[List[str]] = None,
+    limit: int = 20,
 ):
     logger.info("Starting daily outreach run")
 
     discovery_people = await fetch_people_for_discovery(
         pool,
         organization_ids,
+        limit=limit,
     )
 
     #retry_people = await fetch_people_for_retry(

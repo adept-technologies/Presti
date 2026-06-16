@@ -993,30 +993,40 @@ async def fetch_emails_sent(pool, company_id):
         logger.error(f"Failed to fetch sent emails for company {company_id}: {str(e)}")
         return []
 
-async def fetch_eligible_people(pool: asyncpg.Pool, organization_ids: Optional[List[str]] = None)->List:
+async def fetch_eligible_people(pool: asyncpg.Pool, organization_ids: Optional[List[str]] = None, limit: Optional[int] = None)->List:
     if organization_ids == []:
         return []
 
     query = """
         SELECT 
-            *
+            p.*
         FROM 
-            people
+            people p
+        INNER JOIN
+            companies c ON p.organization_id = c.apollo_id
         WHERE
-            subscribed = TRUE
-        AND has_replied = FALSE
-        AND times_contacted < 4
+            p.subscribed = TRUE
+        AND p.has_replied = FALSE
+        AND p.times_contacted < 4
         AND (
-            times_contacted = 0
-            OR last_contacted_at <= now() - interval '7 days'
+            p.times_contacted = 0
+            OR p.last_contacted_at <= now() - interval '7 days'
         )
     """
     
-    params = []
+    params: List[Any] = []
+    param_idx = 1
     if organization_ids:
-        query += " AND organization_id = ANY($1)"
+        query += f" AND p.organization_id = ANY(${param_idx})"
         params.append(organization_ids)
+        param_idx += 1
         
+    query += " ORDER BY c.icp_score DESC NULLS LAST"
+
+    if limit is not None:
+        query += f" LIMIT ${param_idx}"
+        params.append(limit)
+
     query += ";"
     
     try:
@@ -1024,10 +1034,10 @@ async def fetch_eligible_people(pool: asyncpg.Pool, organization_ids: Optional[L
             people = await conn.fetch(query, *params)
             return [dict(person) for person in people]
     except asyncpg.PostgresError as e:
-        logger.error(f"Database error while trying to fetch uncontacted people", str(e))
+        logger.error(f"Database error while trying to fetch uncontacted people: {str(e)}")
         return []
     except Exception as e:
-        logger.error(f"An unexpected error occured")
+        logger.error(f"An unexpected error occurred: {str(e)}")
         return []
 
 async def get_user_by_token(pool: asyncpg.Pool, token: str) -> Dict:
