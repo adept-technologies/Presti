@@ -298,14 +298,18 @@ async def receive_user_phone_number():
         logger.error(f"Failed to get phone number: {str(e)}")
         return jsonify({"status": "error", "message": "Internal Server Error"}), 500
 
-#Sendgrid webhook to receive data about emails sent
+#Smartlead webhook to receive data about emails sent
 @app.route('/webhook', methods=["POST"])
-async def sendgrid_events_webhook():
+async def smartlead_events_webhook():
     logger.info("Fetching webhook event data...")
 
-    events = await request.json
-    if not events:
+    payload = await request.json
+    if not payload:
         return jsonify({"Error": "No events received in request body"}), 400
+
+    # Smartlead sends one event per POST as a single JSON object.
+    # Normalize to a list so update_contacted_status can iterate uniformly.
+    events = [payload] if isinstance(payload, dict) else payload
 
     try:
         # Get the running loop and schedule the update in the background
