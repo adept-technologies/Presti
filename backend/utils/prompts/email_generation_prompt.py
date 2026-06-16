@@ -20,16 +20,12 @@ def get_email_generation_prompt(company_description, first_name, company_name, t
     # We use TRIPLE braces for placeholders the LLM must output (e.g., {{{company_name}}})
     # and SINGLE braces for Python variables used to construct the prompt (e.g., {funding_round}).
     if trigger_type == 'funding':
-        custom_opening = f"""
-            <p>Congrats to the <strong>{company_name}</strong> team on raising your <strong>{funding_round}</strong> round!</p>
-        """
+        custom_opening = f"Congrats to the {company_name} team on raising your {funding_round} round!"
         # Define the main focus for the Subject line and CTA (Growth/Scaling)
         growth_status = f"Funded - {funding_round}"
     
     elif trigger_type == 'hiring':
-        custom_opening = f"""
-            <p>I noticed <strong>{company_name}</strong> is expanding the team with roles in <strong>{hiring_area}</strong> — that’s exciting!</p>
-        """
+        custom_opening = f"I noticed {company_name} is expanding the team with roles in {hiring_area} — that's exciting!"
         # Define the main focus for the Subject line and CTA (Hiring/Expansion)
         growth_status = f"Hiring - {hiring_area}"
     
