@@ -30,18 +30,12 @@ async def send_email(
         logger.warning(f"No Smartlead campaign ID found for sequence step {sequence_number}. Skipping.")
         return None
 
-    # Add unsubscribe footer to email content
-    unsubscribe_footer = f"""
-    <br><br>
-    <hr style="border: 1px solid #ddd;">
-    <p style="font-size: 12px; color: #666;">
-        If you no longer wish to receive these emails, 
-        <a href="{SERVER_URL}/unsubscribe?token={unsubscribe_token}">
-            click here to unsubscribe
-        </a>.
-    </p>
-    """
-    
+    # Append plain text unsubscribe footer
+    unsubscribe_footer = (
+        f"\n\n--\n"
+        f"To unsubscribe: {SERVER_URL}/unsubscribe?token={unsubscribe_token}"
+    )
+
     full_content = content + unsubscribe_footer
     
     url = f"{BASE_URL}/campaigns/{campaign_id}/leads"
@@ -97,7 +91,7 @@ if __name__ == "__main__":
         at optimizing marketing effectiveness and sales processes. The company serves a range of clients looking to enhance 
         their sales strategies through AI-driven insights.
         """
-        first_name = "Mark"
+        first_name = "Kram"
         company_name = "Adept"
         trigger_type = "funding"
         funding_round = "seed"
@@ -122,7 +116,7 @@ if __name__ == "__main__":
             print(content)
 
             response = await send_email(
-                email_to = 'm10mathenge@gmail.com',
+                email_to = 'mark.mathenge@adept-techno.com',
                 subject= subject,
                 content= content,
                 unsubscribe_token = "e3a3c375-cde9-420b-9001-2b188cb2fac8",
