@@ -30,8 +30,8 @@ COPY --from=frontend-build /frontend/dist/lead-gen/browser/ ./static/
 
 # Update PATH
 ENV PYTHONPATH=/app
-ENV FLASK_APP=main.py
-ENV FLASK_RUN_HOST=0.0.0.0
+ENV QUART_APP=main.py
+ENV QUART_RUN_HOST=0.0.0.0
 
 EXPOSE 5050
 

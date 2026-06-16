@@ -1,0 +1,282 @@
+<div style="width:100%; margin: 0; padding: 24px; box-sizing: border-box; overflow-x: hidden;">
+    <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 700; margin-bottom: 24px;">Configure ICP</h2>
+
+    <form [formGroup]="form">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; align-items: start;">
+            
+            <!-- Age -->
+            <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
+                <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Age</div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="color: var(--text-primary);">
+                            <th style="padding: 8px; width: 60px;">Score</th>
+                            <th style="padding: 8px;">Years</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let c of ageControls">
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
+                            <td style="padding: 12px 8px;">
+                                <div class="custom-select-container" style="width: 100%;">
+                                    <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
+                                        <span class="dropdown-text">{{ getSelectionLabel(c.control, allAges) }}</span>
+                                    </div>
+                                    <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
+                                        <label class="custom-select-option" *ngFor="let opt of allAges">
+                                            <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
+                                            {{opt.label}}
+                                        </label>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Employee Count -->
+            <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
+                <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Employee Count</div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="color: var(--text-primary);">
+                            <th style="padding: 8px; width: 60px;">Score</th>
+                            <th style="padding: 8px;">Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let c of employeeControls">
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
+                            <td style="padding: 12px 8px;">
+                                <div class="custom-select-container" style="width: 100%;">
+                                    <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
+                                        <span class="dropdown-text">{{ getSelectionLabel(c.control, allEmployees) }}</span>
+                                    </div>
+                                    <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
+                                        <label class="custom-select-option" *ngFor="let opt of allEmployees">
+                                            <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
+                                            {{opt.label}}
+                                        </label>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Funding Stage -->
+            <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
+                <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Funding Stage</div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="color: var(--text-primary);">
+                            <th style="padding: 8px; width: 60px;">Score</th>
+                            <th style="padding: 8px;">Stage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let c of fundingControls">
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
+                            <td style="padding: 12px 8px;">
+                                <div class="custom-select-container" style="width: 100%;">
+                                    <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
+                                        <span class="dropdown-text">{{ getSelectionLabel(c.control, allFunding) }}</span>
+                                    </div>
+                                    <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
+                                        <label class="custom-select-option" *ngFor="let opt of allFunding">
+                                            <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
+                                            {{opt.label}}
+                                        </label>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Industry -->
+            <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
+                <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Industry</div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="color: var(--text-primary);">
+                            <th style="padding: 8px; width: 60px;">Score</th>
+                            <th style="padding: 8px;">Industry</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let c of industryControls">
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
+                            <td style="padding: 12px 8px;">
+                                <div class="custom-select-container" style="width: 100%;">
+                                    <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
+                                        <span class="dropdown-text">{{ getSelectionLabel(c.control, allIndustries) }}</span>
+                                    </div>
+                                    <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
+                                        <label class="custom-select-option" *ngFor="let opt of allIndustries">
+                                            <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
+                                            {{opt.label}}
+                                        </label>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Geography -->
+            <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
+                <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Geography</div>
+
+                <!-- Primary Targets (Score 100) -->
+                <div style="font-weight:500; font-size: 0.9rem; margin-bottom: 8px; color: var(--text-primary); opacity: 0.7;">Primary Targets</div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 16px;">
+                    <thead>
+                        <tr style="color: var(--text-primary);">
+                            <th style="padding: 8px; width: 60px;">Score</th>
+                            <th style="padding: 8px;">Country</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">100</td>
+                            <td style="padding: 12px 8px;">
+                                <div class="custom-select-container" style="width: 100%;">
+                                    <div class="custom-select-trigger" (click)="toggleDropdown('geo_primary')">
+                                        <span class="dropdown-text">{{ getSelectionLabel('geo_primary', primaryTargetCountries) }}</span>
+                                    </div>
+                                    <div class="custom-select-dropdown" *ngIf="activeDropdown === 'geo_primary'">
+                                        <label class="custom-select-option" *ngFor="let opt of primaryTargetCountries">
+                                            <input type="checkbox" [checked]="isChecked('geo_primary', opt.value)" (change)="toggleSelection('geo_primary', opt.value)">
+                                            {{opt.label}}
+                                        </label>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Regional Tiers (85, 60, 50) -->
+                <div style="font-weight:500; font-size: 0.9rem; margin-bottom: 8px; color: var(--text-primary); opacity: 0.7;">Regional Tiers</div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="color: var(--text-primary);">
+                            <th style="padding: 8px; width: 60px;">Score</th>
+                            <th style="padding: 8px;">Region</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let c of geographyRegionControls">
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
+                            <td style="padding: 12px 8px;">
+                                <div class="custom-select-container" style="width: 100%;">
+                                    <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
+                                        <span class="dropdown-text">{{ getSelectionLabel(c.control, allRegions) }}</span>
+                                    </div>
+                                    <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
+                                        <label class="custom-select-option" *ngFor="let opt of allRegions">
+                                            <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
+                                            {{opt.label}}
+                                        </label>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Keywords -->
+            <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
+                <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Keywords</div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="color: var(--text-primary);">
+                            <th style="padding: 8px; width: 60px;">Score</th>
+                            <th style="padding: 8px;">Terms</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let c of keywordControls">
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">{{c.label}}</td>
+                            <td style="padding: 12px 8px;">
+                                <div class="custom-select-container" style="width: 100%;">
+                                    <div class="custom-select-trigger" (click)="toggleDropdown(c.control)">
+                                        <span class="dropdown-text">{{ getSelectionLabel(c.control, allKeywords) }}</span>
+                                    </div>
+                                    <div class="custom-select-dropdown" *ngIf="activeDropdown === c.control">
+                                        <label class="custom-select-option" *ngFor="let opt of allKeywords">
+                                            <input type="checkbox" [checked]="isChecked(c.control, opt.value)" (change)="toggleSelection(c.control, opt.value)">
+                                            {{opt.label}}
+                                        </label>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Weights -->
+            <div style="background: var(--bg-surface, transparent); border-radius: 8px; padding: 16px;">
+                <div style="font-weight:600; font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">Weights (must add up to 1)</div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="color: var(--text-primary);">
+                            <th style="padding: 8px; width: 80px;">Feature</th>
+                            <th style="padding: 8px;">Weight</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Geography</td>
+                            <td style="padding: 12px 8px;">
+                                <input formControlName="weight_geography" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Funding</td>
+                            <td style="padding: 12px 8px;">
+                                <input formControlName="weight_funding_stage" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Employees</td>
+                            <td style="padding: 12px 8px;">
+                                <input formControlName="weight_employee_count" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Age</td>
+                            <td style="padding: 12px 8px;">
+                                <input formControlName="weight_age" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Industry</td>
+                            <td style="padding: 12px 8px;">
+                                <input formControlName="weight_industry" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 8px; font-weight: 500; color: var(--text-primary);">Keywords</td>
+                            <td style="padding: 12px 8px;">
+                                <input formControlName="weight_keywords" type="number" step="0.01" style="width:100%; padding:10px 10px; border:2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); font-family: var(--font-family-base, inherit); font-weight: var(--font-weight-header, normal); font-size: var(--font-size-header, 0.875rem);" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="margin-top:32px; display:flex; gap:16px;">
+            <app-button [buttonText]="'Save'" [icon]="'visibility'" (click)="saveICPSettings()"> </app-button>
+            <a routerLink="/settings" style="padding:10px 24px; background:transparent; color:var(--text-primary); border-radius:6px; border:1px solid var(--border-color, rgba(0,0,0,0.2)); text-decoration:none;">Back</a>
+        </div>
+    </form>
+</div>

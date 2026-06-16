@@ -2,6 +2,7 @@ import os
 import asyncpg
 import asyncio
 import logging
+from typing import Any
 from dotenv import load_dotenv
 from orchestration.ingestion import main as ingestion_main
 from orchestration.normalization import main as normalization_main
@@ -16,13 +17,13 @@ DB_URL = os.getenv("DATABASE_URL")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def main():
+async def main(auth0_id: str = ""):
 
     # ===========QUEUE CREATION ===============
-    ingestion_to_normalization_queue = asyncio.Queue()
-    normalization_to_enrichment_queue= asyncio.Queue()
-    normalization_to_storage_queue= asyncio.Queue()
-    enrichment_to_storage_queue = asyncio.Queue()
+    ingestion_to_normalization_queue: asyncio.Queue[Any] = asyncio.Queue()
+    normalization_to_enrichment_queue: asyncio.Queue[Any] = asyncio.Queue()
+    normalization_to_storage_queue: asyncio.Queue[Any] = asyncio.Queue()
+    enrichment_to_storage_queue: asyncio.Queue[Any] = asyncio.Queue()
 
     async with asyncpg.create_pool(dsn=DB_URL, min_size=1, max_size=100) as pool:
 
@@ -52,7 +53,8 @@ async def main():
         )
 
         await scoring_main(
-            pool
+            pool,
+            auth0_id
         )
 
         await outreach_main(

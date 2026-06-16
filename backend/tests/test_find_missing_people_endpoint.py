@@ -1,5 +1,6 @@
 #Run with ".\\.venv\\Scripts\\python -m pytest tests/test_find_missing_people_endpoint.py -v -s"
 
+import jwt
 import pytest
 import asyncpg
 import httpx
@@ -27,7 +28,12 @@ async def test_find_missing_people_endpoint(client):
     mock_httpx_client = AsyncMock(spec=httpx.AsyncClient)
 
     # 2. Mock individual pipeline steps in utils.find_missing_people
-    with patch("main.asyncpg.create_pool", return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_pool))), \
+    with patch("utils.auth.get_auth0_public_key", new_callable=AsyncMock, return_value="mock-public-key"), \
+         patch("utils.auth.jwt.decode", return_value={
+            "sub": "test-user",
+            "email": "test@example.com",
+     }),\
+         patch("main.asyncpg.create_pool", return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_pool))), \
          patch("main.httpx.AsyncClient", return_value=MagicMock(__aenter__=AsyncMock(return_value=mock_httpx_client))), \
          patch("utils.find_missing_people.get_uncontacted_companies_without_people", new_callable=AsyncMock) as mock_fetch, \
          patch("utils.find_missing_people.search_for_people", new_callable=AsyncMock) as mock_search, \
@@ -53,7 +59,7 @@ async def test_find_missing_people_endpoint(client):
 
         # 4. Execute the request — Quart test client is async
         async with client as c:
-            response = await c.get('/find-missing-people')
+            response = await c.get('/find-missing-people', headers={"Authorization": "Bearer fake-token"})
 
         # 5. Assertions
         assert response.status_code == 200

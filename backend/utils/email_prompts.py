@@ -1,5 +1,37 @@
+role_guidelines = {
+    "CEO": """
+    ### Target Persona: CEO (Chief Executive Officer)
+    - Focus: Purely high-level and strategic. Emphasize overall company growth, market acceleration, product-market velocity, and long-term vision.
+    - Tone: Visionary, peer-to-peer executive, concise. Do not talk about engineering implementation details or granular metrics.
+    - Solution/Outcome Alignment: Emphasize scaling speed, team capacity, and roadmap acceleration (e.g., "accelerate time-to-market by 40%", "unlock critical roadmap milestones").
+    """,
+    "CTO": """
+    ### Target Persona: CTO (Chief Technology Officer) / Engineering Leader
+    - Focus: High-level and strategic, but with technical detail. Emphasize roadmap velocity, engineering throughput, technical debt reduction, and modern software practices.
+    - Tone: Technical peer, professional, expert. Speak their language (e.g. "engineering velocity", "data pipelines", "infrastructure scalability").
+    - Solution/Outcome Alignment: Emphasize offloading non-core engineering overhead, accelerating deployment pipelines, or model accuracy validation (e.g., "improve deployment velocity by 3x", "free core developers from data bottlenecks").
+    """,
+    "CFO": """
+    ### Target Persona: CFO (Chief Financial Officer)
+    - Focus: High-level and strategic, but with cost optimization, efficiency, and ROI details. Emphasize cost predictability, budget optimization, overhead reduction, and staffing agility.
+    - Tone: Value-oriented, analytical, professional. Highlight the economic benefits of partnership.
+    - Solution/Outcome Alignment: Emphasize reducing talent acquisition cost, lowering OpEx, and getting high-quality output without hiring overhead (e.g., "reduce operational overhead by 40%", "predictable cost models").
+    """,
+    "Manager": """
+    ### Target Persona: Manager (Engineering Manager, Product Manager, Scrum Master)
+    - Focus: Functional, tactical, and execution-oriented. Emphasize team bandwidth support, sprint delivery, meeting timelines, reducing developer burnout, and solving concrete bottlenecks.
+    - Tone: Practical, supportive, collaborative.
+    - Solution/Outcome Alignment: Focus on immediate capacity relief, predictable sprint execution, and dedicated support (e.g., "onboard dedicated support in under 10 days", "unblock sprint capacity by 30+ hours weekly").
+    """,
+    "General": """
+    ### Target Persona: Business Lead
+    - Focus: General balance between strategic growth benefits and resource efficiency.
+    - Tone: Professional, outcome-oriented.
+    """
+}
+
 email_prompts = {
-    1:  
+    1:
     """
         You are an expert Sales Development Representative (SDR) tasked with crafting a highly personalized outreach email.
         Your goal is to secure a meeting by demonstrating a specific understanding of the prospect's business and connecting it directly to the services offered by your company.
@@ -12,10 +44,12 @@ email_prompts = {
            - Frontend/Backend/Fullstack/Mobile: Software Development Services (Feature Delivery, Refactoring).
            - Data/AI/ML/Analytics: AI/ML Services (Data Solutions, Model Validation).
            - DevOps/SRE/Cloud: Software Development Services (Cloud-native & DevOps).
-        3. **Tone Adjustment:** 
+        3. **Tone Adjustment:**
            - For Product companies: Focus on "accelerating your roadmap" and "offloading technical debt".
            - For Agencies: Focus on "increasing bench capacity" and "supporting client delivery".
         4. **Name Cleaning:** Use ONLY the core brand name. Strip suffixes like "Inc.", "Ltd.", or long descriptive taglines (e.g., use "Eleve Media" not "Eleve Media - An Influencer Marketing Platform Co.").
+        5. **Persona Guidelines:** Adjust focus, tone, and outcomes as per the following recipient profile:
+           {role_guidelines}
 
         ---
         ### Context & Services Offered (Your Company: Adept Technologies)
@@ -23,7 +57,7 @@ email_prompts = {
         1. **Data Solutions:** Data annotation, labeling, quality assurance.
         2. **ML Services:** Model validation, human-in-the-loop support, specialized data collection.
         3. **Customer Engagement:** Complex interactions, lead qualification, and analytics.
-        
+
         **Software Development Services**:
         1. **Product Build and Feature Delivery:** Discovery, UI/UX, engineering, testing, iterative releases.
         2. **Support and Optimisation:** Post-go-live stability and continuous improvement.
@@ -42,32 +76,31 @@ email_prompts = {
         ---
         ### Email Requirements
         1. **Subject Line:** Short (under 7 words). Reference a specific outcome or pain point.
-        2. **Personalization:** 
-           - Reference the specific hiring role or funding event naturally. 
+        2. **Personalization:**
+           - Reference the specific hiring role or funding event naturally.
            - **NEVER** use generic phrases like "general scaling bottlenecks" if you have a specific hiring/funding trigger.
         3. **The Hook:** Lead with a sentence that demonstrates you understand their specific business model (Product vs. Agency).
         4. **Quantified Outcomes:** Include at least two quantified benefits (e.g., "reduce overhead by 40%", "accelerate delivery by 3x").
-        5. **Format:** Raw HTML.
+        5. **Format:** Plain text only. No HTML tags whatsoever. Use a dash (-) for bullet points.
 
         ### Email Output Template:
-```html
-        <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <p>Hello {first_name},</p>
-                {custom_opening}
-                <p>Given your focus on [SPECIFIC PRODUCT/SERVICE], I can see how [SPECIFIC CHALLENGE] might be a priority right now.</p>
-                <ul>
-                    <li>[SOLUTION #1 tied to hiring/funding + QUANTIFIED OUTCOME]</li>
-                    <li>[SOLUTION #2 tied to business model + QUANTIFIED OUTCOME]</li>
-                </ul>
-                <p>This allows your team to focus on [CORE OBJECTIVE] while we handle [SECONDARY/RESOURCE-HEAVY TASK].</p>
-                <p>Would you be open to a quick chat this week to explore how we can specifically support <strong>{company_name}'s</strong> next phase of growth?</p>
-            </body>
-        </html>
-```
+
+Hello {first_name},
+
+{custom_opening}
+
+Given your focus on [SPECIFIC PRODUCT/SERVICE], I can see how [SPECIFIC CHALLENGE] might be a priority right now.
+
+- [SOLUTION #1 tied to hiring/funding + QUANTIFIED OUTCOME]
+- [SOLUTION #2 tied to business model + QUANTIFIED OUTCOME]
+
+This allows your team to focus on [CORE OBJECTIVE] while we handle [SECONDARY/RESOURCE-HEAVY TASK].
+
+Would you be open to a quick chat this week to explore how we can specifically support {company_name}'s next phase of growth?
+
         Return a JSON dictionary: {{"subject": "...", "content": "..."}}
     """,
-    
+
     2: """
         You are an expert Sales Development Representative (SDR) crafting a follow-up email after your initial outreach received no response.
         Your goal is to re-engage the prospect with a different angle while maintaining professionalism.
@@ -77,6 +110,8 @@ email_prompts = {
         1. **Acknowledge the model:** Was the first email too focused on product when they are an agency? Switch the angle.
         2. **Hiring Pulse:** If they are hiring, mention how the talent market for [Hiring Role] is tightening and how Adept provides an immediate "bench" to bridge the gap.
         3. **Name Cleaning:** Use ONLY the core brand name.
+        4. **Persona Guidelines:** Adjust focus, tone, and outcomes as per the following recipient profile:
+           {role_guidelines}
 
         ---
         ### Context & Services offered by Adept Technologies
@@ -94,21 +129,21 @@ email_prompts = {
         1. **Subject Line:** Follow-up oriented but outcome-driven (e.g., "Bridging the talent gap at {company_name}").
         2. **Angle:** Focus on "Speed to Market" or "Operational Flexibility".
         3. **Quantified Outcome:** Mention at least one (e.g., "onboard a dedicated team in under 10 days").
+        4. **Format:** Plain text only. No HTML tags whatsoever. Use a dash (-) for bullet points.
 
         ### Email Output Template:
-```html
-        <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <p>Hello {first_name},</p>
-                <p>I wanted to follow up on my note about [TOPIC]. Timing is everything, and I know your team is likely busy [Expanding specific area].</p>
-                <p>Many teams at [Company Type - Agency/Product] find that [Pain Point] often slows down [Objective]. We've helped similar companies [Solution] to [Quantified Outcome].</p>
-                <p>Worth a 5-minute sync to see if Adept can help you scale faster?</p>
-            </body>
-        </html>
-```
+
+Hello {first_name},
+
+I wanted to follow up on my note about [TOPIC]. Timing is everything, and I know your team is likely busy [Expanding specific area].
+
+Many teams at [Company Type - Agency/Product] find that [Pain Point] often slows down [Objective]. We've helped similar companies [Solution] to [Quantified Outcome].
+
+Worth a 5-minute sync to see if Adept can help you scale faster?
+
         Return a JSON dictionary: {{"subject": "...", "content": "..."}}
     """,
-    
+
     3: """
         You are an expert Sales Development Representative (SDR) crafting the second follow-up.
         Angle: **De-risking and Efficiency.**
@@ -117,6 +152,8 @@ email_prompts = {
         ### Analysis
         - Determine if their bottleneck is likely **talent acquisition** (long hiring cycles) or **operational overhead** (managing remote teams).
         - Name Cleaning: Strip all technical suffixes.
+        - Persona Guidelines: Adjust focus, tone, and outcomes as per the following recipient profile:
+          {role_guidelines}
 
         ---
         ### Prospect Data
@@ -130,21 +167,21 @@ email_prompts = {
         1. **Subject Line:** Urgency/Problem-solution focused (e.g., "Protecting {company_name}'s roadmap").
         2. **Hook:** Address the difficulty of finding specialized [Hiring Role] talent or maintaining [Pain Point] during rapid growth.
         3. **Outcome:** Mention "cost-to-quality ratio" or "reducing management overhead by 50%".
+        4. **Format:** Plain text only. No HTML tags whatsoever. Use a dash (-) for bullet points.
 
         ### Email Output Template:
-```html
-        <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <p>Hello {first_name},</p>
-                <p>One thing I've observed with [Company Type] in the [Industry] space is that [Pain Point] often becomes a major bottleneck as you scale [Hiring/Funding area].</p>
-                <p>Adept Technologies specializes in [Service] to help teams like yours [Concrete Outcome - e.g., increase delivery speed by 40%].</p>
-                <p>Worth a 10-minute chat to see if we're a fit for your needs this quarter?</p>
-            </body>
-        </html>
-```
+
+Hello {first_name},
+
+One thing I've observed with [Company Type] in the [Industry] space is that [Pain Point] often becomes a major bottleneck as you scale [Hiring/Funding area].
+
+Adept Technologies specializes in [Service] to help teams like yours [Concrete Outcome - e.g., increase delivery speed by 40%].
+
+Worth a 10-minute chat to see if we're a fit for your needs this quarter?
+
         Return a JSON dictionary: {{"subject": "...", "content": "..."}}
     """,
-    
+
     4: """
         You are an expert Sales Development Representative (SDR) crafting a "break-up" email.
         Goal: Provide a graceful exit while leaving the door open.
@@ -160,18 +197,20 @@ email_prompts = {
         1. **Clean Name:** Ensure the company name is core-only.
         2. **One-Sentence Value:** Briefly restate how we help [Company Type] scale [Hiring Area] without the overhead.
         3. **CTA:** Make it zero-pressure.
+        4. **Persona Guidelines:** Adjust tone and outcomes as per the following recipient profile:
+           {role_guidelines}
+        5. **Format:** Plain text only. No HTML tags whatsoever.
 
         ### Email Output Template:
-```html
-        <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <p>Hello {first_name},</p>
-                <p>I haven't heard back, so I'm assuming now isn't the right time to explore how Adept could support <strong>{company_name}</strong> with [One-sentence outcome].</p>
-                <p>I'll close the loop on my end. If priorities shift or you need external bench capacity for your [Hiring/Product area] later on, I'm just an email away.</p>
-                <p>Best of luck with your current projects!</p>
-            </body>
-        </html>
-```
+
+Hello {first_name},
+
+I haven't heard back, so I'm assuming now isn't the right time to explore how Adept could support {company_name} with [One-sentence outcome].
+
+I'll close the loop on my end. If priorities shift or you need external bench capacity for your [Hiring/Product area] later on, I'm just an email away.
+
+Best of luck with your current projects!
+
         Return a JSON dictionary: {{"subject": "...", "content": "..."}}
     """
 }

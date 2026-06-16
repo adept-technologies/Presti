@@ -31,6 +31,8 @@ services:
       API_URL: http://127.0.0.1:5050
       AUTH0_DOMAIN: dev-2685h5q7efjt6peh.us.auth0.com
       AUTH0_API_AUDIENCE: https://api.presti
+    env_file:
+      ./backend/.env
     volumes:
       - ./backend/service-account.json:/app/service-account.json
     depends_on:

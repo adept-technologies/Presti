@@ -1,28 +1,75 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { DataCardComponent } from "../../@shared/Components/data-card/data-card.component";
 import { DataFeedComponent } from "../../@shared/Components/data-feed/data-feed.component";
 import { LeadsTableComponent } from '../../@shared/Components/leads/leads.component';
 import { FilterComponent } from '../../@shared/Components/filter/filter.component';
-import { NgFor } from '@angular/common';
+import { NgFor, CommonModule, NgIf } from '@angular/common';
 import { CompaniesService } from '../../@shared/Services/companies.service';
 import { ICompany } from '../../Libs/interfaces/company.interface';
+import { IcpSettingsService } from '../../@shared/Services/icp-settings/icp-settings.service';
+import { ModalService } from '../../@shared/Services/modal.service';
+import { AuthService } from '@auth0/auth0-angular';
+import { Subscription } from 'rxjs';
+
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [DataCardComponent, FilterComponent, NgFor, LeadsTableComponent],
+  imports: [CommonModule, NgFor, NgIf, DataCardComponent, FilterComponent, LeadsTableComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   leadData: ICompany[] = [];
   filteredLeads: ICompany[] = [];
   loading = true;
   statsVisible: any[] = [];
 
-  constructor(private companiesService: CompaniesService) { }
+
+  private authSub?: Subscription;
+  private modalSavedSub?: Subscription;
+
+  constructor(private companiesService: CompaniesService, private icpService: IcpSettingsService, private auth: AuthService, private modalService: ModalService) { }
 
   ngOnInit(): void {
+    // Check ICP settings and show modal if missing
+    // Wait until the user is authenticated to fetch settings (so AuthHttpInterceptor can attach the token)
+    this.authSub = this.auth.isAuthenticated$.subscribe((isAuth) => {
+      if (isAuth) {
+        // Use a dedicated helper so this can be called on login explicitly.
+        this.fetchUserSettings();
+      }
+    });
+
+    this.loadCompanies();
+
+    // Listen for saves from the global modal and refresh companies
+    this.modalSavedSub = this.modalService.saved$.subscribe(() => {
+      this.loadCompanies();
+    });
+  }
+
+  fetchUserSettings() {
+    this.icpService.getSettings().subscribe({
+      next: (res: any) => {
+        console.log('ICP Settings response:', res);
+        console.log('res.icp:', res?.icp);
+        console.log('Object.keys(res.icp).length:', Object.keys(res?.icp || {}).length);
+        if (!res || !res.icp || Object.keys(res.icp).length === 0) {
+          console.log('Showing modal because settings are empty');
+          // Show a simple blocking modal in the middle of the screen
+          this.modalService.show({ type: 'simple', data: { message: 'No ICP settings found' } });
+        } else {
+          console.log('Settings found, not showing modal');
+        }
+      },
+      error: (err: any) => {
+        console.error('Failed to fetch ICP settings', err);
+      }
+    });
+  }
+
+  loadCompanies() {
     this.loading = true;
     this.companiesService.fetch_companies().subscribe({
       next: (companies) => {
@@ -41,6 +88,17 @@ export class HomeComponent implements OnInit {
       }
     });
   }
+
+  ngOnDestroy(): void {
+    if (this.authSub) {
+      this.authSub.unsubscribe();
+    }
+    if (this.modalSavedSub) {
+      this.modalSavedSub.unsubscribe();
+    }
+  }
+
+
 
   /** === SMART STATS WITH WEEKLY PROGRESS === **/
   calculateStats() {

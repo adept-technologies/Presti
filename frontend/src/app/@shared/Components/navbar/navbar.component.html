@@ -12,7 +12,20 @@
     <a class="nav-link" routerLink="/leads">LEADS</a>
     <a class="nav-link" routerLink="/analytics">ANALYTICS</a>
     <a class="nav-link" routerLink="/warmup-stats">WARMUP STATS</a>
-    <a class="nav-link" routerLink="/settings">SETTINGS</a>
+
+    <!-- Settings Dropdown -->
+    <div class="nav-dropdown" (click)="toggleSettings()" [class.open]="settingsOpen">
+      <span class="nav-link">
+        SETTINGS
+        <mat-icon class="dropdown-caret">{{ settingsOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </span>
+      <div class="nav-dropdown-menu" *ngIf="settingsOpen" (click)="$event.stopPropagation()">
+        <a class="dropdown-item" routerLink="/settings/icp" (click)="closeSettings()">
+          <mat-icon class="item-icon">tune</mat-icon>
+          ICP Settings
+        </a>
+      </div>
+    </div>
   </div>
 
   <div class="right-section">
