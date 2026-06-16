@@ -1,3 +1,18 @@
+# =============================================================================
+# CAMPAIGN SETUP UTILITY — Run manually to create and configure new Smartlead
+# campaigns. NOT part of the daily outreach pipeline.
+#
+# Workflow:
+#   1. Call create_campaign() to create a new campaign and get its ID.
+#   2. Call add_sequences() to set the sequence template (uses {{personalized_subject}}
+#      and {{personalized_body}} merge tags populated per-lead by the outreach pipeline).
+#   3. Call connect_email_accounts() to link your sending email account.
+#   4. Call update_settings() to configure tracking preferences.
+#   5. Call launch_campaign() to set the campaign to STARTED status.
+#   6. Add the returned campaign ID to .env as SMARTLEAD_CAMPAIGN_STEP_N.
+#
+# Daily email sending → see services/email_sending.py
+# =============================================================================
 import os
 import httpx 
 import logging

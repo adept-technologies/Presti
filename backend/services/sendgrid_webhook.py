@@ -6,48 +6,42 @@ import logging
 import aiofiles
 from dotenv import load_dotenv
 
-logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-load_dotenv(override=True)
+load_dotenv()
 
 DB_URL = os.getenv("DATABASE_URL")
 
-# We use a dictionary to map SendGrid events to a value in the contacted_status db column.
+# We use a dictionary to map SmartLead events to a value in the contacted_status db column.
 # The 'status' is the value to be set in the database.
 # The 'precedence' is a numerical value that determines which status is "better".
 # A higher number means a higher precedence. This prevents a "bounce" from overwriting
 # a "delivered" status.
 EVENT_STATUS_MAP = {
-    "processed": {"status": "pending", "precedence": 2},
-    "delivered": {"status": "contacted", "precedence": 3},
-    "open": {"status": "opened", "precedence": 4},
-    "click": {"status": "engaged", "precedence": 5},
-    "bounce": {"status": "failed", "precedence": 1},
-    "spamreport": {"status": "failed", "precedence": 1},
-    "unsubscribe": {"status": "opted_out", "precedence": 7}, # A terminal status
-    "dropped": {"status": "failed", "precedence": 1},
-    "deferred": {"status": "pending", "precedence": 2},
+    "EMAIL_SENT": {"status": "contacted", "precedence": 2},
+    "EMAIL_BOUNCE": {"status": "failed", "precedence": 1},
+    "EMAIL_REPLY": {"status": "replied", "precedence": 3},
+    "LEAD_UNSUBSCRIBED": {"status": "opted_out", "precedence": 4}, # A terminal status
 }
 
 async def update_contacted_status(events):
-    logger.info(f"The DB URL is: {DB_URL}")
-
     """
     Updates emails_sent.status from webhook events,
     propagates status to people, then updates company status.
     """
 
     #Write events to file
-    async with aiofiles.open("sendgrid_webhooks", "a") as file:
+    async with aiofiles.open("smartlead_webhooks", "a") as file:
         await file.write(json.dumps(events, indent=2))
     
     # Build a map of emails to deduplicate and store their highest precedence status
     email_updates_map = {}
     for event in events:
         logger.info(f"Event is: {event}")
-        email = event.get("email")
-        sg_event = event.get("event")
-        update_info = EVENT_STATUS_MAP.get(sg_event)
+        email = event.get("to_email")
+        sl_event = event.get("event_type")
+        update_info = EVENT_STATUS_MAP.get(sl_event)
         
         if email and update_info:
             current_best = email_updates_map.get(email)
@@ -93,12 +87,9 @@ async def update_contacted_status(events):
                         WHERE e.recipient_id = p.id
                         AND t.precedence >= COALESCE(
                             CASE e.status::text
-                                WHEN 'opted_out'  THEN 7
-                                WHEN 'replied'    THEN 6
-                                WHEN 'engaged'    THEN 5
-                                WHEN 'opened'     THEN 4
-                                WHEN 'contacted'  THEN 3
-                                WHEN 'pending'    THEN 2
+                                WHEN 'opted_out'  THEN 4
+                                WHEN 'replied'    THEN 3
+                                WHEN 'contacted'  THEN 2
                                 WHEN 'failed'     THEN 1
                                 ELSE 0
                             END, 0
@@ -113,19 +104,16 @@ async def update_contacted_status(events):
                         SET
                             contacted_status = t.status,
                             times_contacted = times_contacted + CASE
-                                WHEN t.status IN ('contacted', 'opened', 'engaged') THEN 1
+                                WHEN t.status = 'contacted' THEN 1
                                 ELSE 0
                             END
                         FROM tmp_email_status t
                         WHERE LOWER(p.email) = LOWER(t.email)
                         AND t.precedence >= COALESCE(
                             CASE p.contacted_status::text
-                                WHEN 'opted_out'  THEN 7
-                                WHEN 'replied'    THEN 6
-                                WHEN 'engaged'    THEN 5
-                                WHEN 'opened'     THEN 4
-                                WHEN 'contacted'  THEN 3
-                                WHEN 'pending'    THEN 2
+                                WHEN 'opted_out'  THEN 4
+                                WHEN 'replied'    THEN 3
+                                WHEN 'contacted'  THEN 2
                                 WHEN 'failed'     THEN 1
                                 ELSE 0
                             END, 0
@@ -137,7 +125,7 @@ async def update_contacted_status(events):
                     org_ids = await conn.fetch("""
                         SELECT DISTINCT organization_id
                         FROM people
-                        WHERE contacted_status IN ('contacted','opened','engaged','pending','failed','opted_out')
+                        WHERE contacted_status IN ('contacted','replied','failed','opted_out')
                     """)
                     org_id_list = [record["organization_id"] for record in org_ids]
 
@@ -149,13 +137,10 @@ async def update_contacted_status(events):
                                     organization_id,
                                     MAX(
                                         CASE contacted_status
-                                            WHEN 'opted_out' THEN 7
-                                            WHEN 'replied' THEN 6
-                                            WHEN 'engaged' THEN 5
-                                            WHEN 'opened' THEN 4
-                                            WHEN 'contacted' THEN 3
-                                            WHEN 'pending' THEN 2
-                                            WHEN 'failed' THEN 1
+                                            WHEN 'opted_out'  THEN 4
+                                            WHEN 'replied'    THEN 3
+                                            WHEN 'contacted'  THEN 2
+                                            WHEN 'failed'     THEN 1
                                             ELSE 0
                                         END
                                     ) AS max_precedence
@@ -165,12 +150,9 @@ async def update_contacted_status(events):
                             )
                             UPDATE companies c
                             SET contacted_status = CASE cns.max_precedence
-                                WHEN 7 THEN 'opted_out'::contacted_status_enum
-                                WHEN 6 THEN 'replied'::contacted_status_enum
-                                WHEN 5 THEN 'engaged'::contacted_status_enum
-                                WHEN 4 THEN 'opened'::contacted_status_enum
-                                WHEN 3 THEN 'contacted'::contacted_status_enum
-                                WHEN 2 THEN 'pending'::contacted_status_enum
+                                WHEN 4 THEN 'opted_out'::contacted_status_enum
+                                WHEN 3 THEN 'replied'::contacted_status_enum
+                                WHEN 2 THEN 'contacted'::contacted_status_enum
                                 WHEN 1 THEN 'failed'::contacted_status_enum
                                 ELSE 'uncontacted'::contacted_status_enum
                             END
@@ -187,14 +169,10 @@ async def update_contacted_status(events):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     sample_events = [
-        {"email": "aalice@example.com", "event": "delivered"},
-        {"email": "bbob@example.com", "event": "open"},
-        {"email": "ccarol@example.com", "event": "bounce"},
-        {"email": "ddave@example.com", "event": "unsubscribe"},
-        {"email": "eeve@example.com", "event": "click"},
-        {"email": "ffrank@example.com", "event": "processed"},
-        {"email": "aaalice@example.com", "event": "click"},  # Alice gets a higher precedence event
-        {"email": "bbbob@example.com", "event": "spamreport"},
-        {"email": "cccarol@example.com", "event": "delivered"},  # Carol gets a better event after bounce
+        {"to_email": "aalice@example.com", "event_type": "EMAIL_SENT"},
+        {"to_email": "bbob@example.com", "event_type": "EMAIL_REPLY"},
+        {"to_email": "ccarol@example.com", "event_type": "EMAIL_BOUNCE"},
+        {"to_email": "ddave@example.com", "event_type": "LEAD_UNSUBSCRIBED"},
+        {"to_email": "aalice@example.com", "event_type": "EMAIL_REPLY"},  # Alice gets a higher precedence event
     ]
     asyncio.run(update_contacted_status(sample_events))
