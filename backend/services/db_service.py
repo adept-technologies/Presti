@@ -1014,7 +1014,7 @@ async def fetch_eligible_people(pool: asyncpg.Pool, organization_ids: Optional[L
         )
     """
     
-    params = []
+    params: List[Any] = []
     param_idx = 1
     if organization_ids:
         query += f" AND p.organization_id = ANY(${param_idx})"
