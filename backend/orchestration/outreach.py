@@ -58,6 +58,7 @@ async def process_person(person: Dict[str, Any], pool) -> bool:
     """
     person_id = person.get("id")
     first_name = person.get("first_name")
+    last_name = person.get("last_name")
     email = person.get("email", "")
     title = person.get("title")
     org_apollo_id = person.get("organization_id", "")

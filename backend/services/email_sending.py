@@ -1,10 +1,7 @@
 import os
 import logging
+import httpx
 from dotenv import load_dotenv
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import (
-    Mail, ReplyTo, From, TrackingSettings, ClickTracking, OpenTracking
-)
 import asyncio
 from services.db_service import *
 from utils.prompts.email_generation_prompt import get_email_generation_prompt
@@ -13,26 +10,26 @@ load_dotenv(override=True)
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-EMAIL_SEND_API = "https://api.sendgrid.com/v3/mail/send"
-EMAIL_FROM = "antony@adeptech.co.ke" 
-EMAIL_FROM_NAME = "Antony Ngatia"
-REPLY_TO_EMAIL = "antony@adeptech.co.ke" 
-REPLY_TO_NAME = "Antony Ngatia" 
+SMARTLEAD_API_KEY = os.getenv("SMARTLEAD_API_KEY")
+BASE_URL = "https://server.smartlead.ai/api/v1" 
 SERVER_URL = os.getenv("SERVER_URL")
 
-email_headers = {
-    "Authorization": f"Bearer {SENDGRID_API_KEY}"
-}
 async def send_email(
         email_to: str,
         subject: str,
         content: str,
         unsubscribe_token: str,
-        email_from = EMAIL_FROM
+        email_from = None,
+        sequence_number: int = 1,
+        first_name: str = "",
+        last_name: str = "",
+        company_name: str = ""
 ):
-    sendgrid_client = SendGridAPIClient(SENDGRID_API_KEY)
-    
+    campaign_id = os.getenv(f"SMARTLEAD_CAMPAIGN_STEP_{sequence_number}")
+    if not campaign_id:
+        logger.warning(f"No Smartlead campaign ID found for sequence step {sequence_number}. Skipping.")
+        return None
+
     # Add unsubscribe footer to email content
     unsubscribe_footer = f"""
     <br><br>
@@ -47,33 +44,41 @@ async def send_email(
     
     full_content = content + unsubscribe_footer
     
-    email = Mail(
-        from_email=email_from, 
-        to_emails=email_to,
-        subject=subject,
-        html_content=full_content,
-        )
-
-    #Add who to reply to
-    email.reply_to = ReplyTo(
-        email=REPLY_TO_EMAIL,
-        name=REPLY_TO_NAME
-    )
-
-    email.from_email = From(
-        email=EMAIL_FROM,
-        name=EMAIL_FROM_NAME
-    )
+    url = f"{BASE_URL}/campaigns/{campaign_id}/leads"
+    params = {"api_key": SMARTLEAD_API_KEY}
     
-    #Add email settings
-    email.tracking_settings = TrackingSettings(
-        click_tracking=ClickTracking(enable=True, enable_text=True),
-        open_tracking=OpenTracking(enable=True)
-    )
+    payload = {
+        "lead_list": [
+            {
+                "email": email_to,
+                "first_name": first_name,
+                "last_name": last_name,
+                "company_name": company_name,
+                "custom_fields": {
+                    "personalized_subject": subject,
+                    "personalized_body": full_content
+                }
+            }
+        ],
+        "settings": {
+            "ignore_global_block_list": False,
+            "ignore_unsubscribe_list": False,
+            "ignore_community_bounce_list": False,
+            "ignore_duplicate_leads_in_other_campaign": True
+        }
+    }
 
-    response = sendgrid_client.send(email)
-    logger.info(f"Email sent to {email_to}")
-    return response
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        r = await client.post(
+            url, 
+            json=payload, 
+            params=params,
+            headers={"Content-Type": "application/json"}
+        )
+        r.raise_for_status()
+        logger.info(f"Email sent (added lead) to {email_to} via Smartlead campaign {campaign_id}")
+        return r.json()
+
 
 
 if __name__ == "__main__":
@@ -116,19 +121,17 @@ if __name__ == "__main__":
             content = email_json["content"]
             print(content)
 
-            #response = await send_email(
-                #email_to = 'm10mathenge@gmail.com',
-                #subject= subject,
-                #content= content,
-                #unsubscribe_token = "e3a3c375-cde9-420b-9001-2b188cb2fac8"
-            #)
-            #print(response.status_code)
-            #print(response.body)
-            #print(response.headers)
+            response = await send_email(
+                email_to = 'm10mathenge@gmail.com',
+                subject= subject,
+                content= content,
+                unsubscribe_token = "e3a3c375-cde9-420b-9001-2b188cb2fac8",
+                first_name=first_name,
+                company_name=company_name
+            )
+            print("Response:", response)
         except Exception as e:
             error_msg = f"Couldn't send email: {e}"
-            if hasattr(e, 'body'):
-                error_msg += f" | SendGrid Body: {e.body}"
             logger.exception(error_msg)
     
     asyncio.run(main())
