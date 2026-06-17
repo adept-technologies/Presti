@@ -124,6 +124,10 @@ a{
   grid-template-columns: repeat(3, 1fr);
   gap: 1em;
   color: var(--text-primary);
+
+  :host-context(.dark-theme) & {
+    color: white;
+  }
 }
 
 .company-section {
