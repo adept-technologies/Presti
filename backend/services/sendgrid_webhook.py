@@ -31,33 +31,36 @@ async def update_contacted_status(events):
     propagates status to people, then updates company status.
     """
 
-    #Write events to file
-    async with aiofiles.open("smartlead_webhooks", "a") as file:
-        await file.write(json.dumps(events, indent=2))
-    
-    # Build a map of emails to deduplicate and store their highest precedence status
-    email_updates_map = {}
-    for event in events:
-        logger.info(f"Event is: {event}")
-        email = event.get("to_email")
-        sl_event = event.get("event_type")
-        update_info = EVENT_STATUS_MAP.get(sl_event)
-        
-        if email and update_info:
-            current_best = email_updates_map.get(email)
-            if not current_best or update_info["precedence"] > current_best["precedence"]:
-                email_updates_map[email] = {
-                    "email": email,
-                    "status": update_info["status"],
-                    "precedence": update_info["precedence"]
-                }
-
-    email_updates = list(email_updates_map.values())
-    if not email_updates:
-        logger.info("No valid email events to process.")
-        return
-
     try:
+        #Write events to file
+        try:
+            async with aiofiles.open("smartlead_webhooks", "a") as file:
+                await file.write(json.dumps(events, indent=2))
+        except Exception as file_err:
+            logger.warning(f"Could not write webhook log to file: {file_err}")
+
+        # Build a map of emails to deduplicate and store their highest precedence status
+        email_updates_map = {}
+        for event in events:
+            logger.info(f"Event is: {event}")
+            email = event.get("to_email")
+            sl_event = event.get("event_type")
+            update_info = EVENT_STATUS_MAP.get(sl_event)
+            
+            if email and update_info:
+                current_best = email_updates_map.get(email)
+                if not current_best or update_info["precedence"] > current_best["precedence"]:
+                    email_updates_map[email] = {
+                        "email": email,
+                        "status": update_info["status"],
+                        "precedence": update_info["precedence"]
+                    }
+
+        email_updates = list(email_updates_map.values())
+        if not email_updates:
+            logger.info("No valid email events to process.")
+            return
+
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
             async with pool.acquire() as conn:
                 # We wrap the entire operation in a transaction to ensure atomicity
