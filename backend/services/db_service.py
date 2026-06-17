@@ -313,7 +313,8 @@ async def store_email(
 
         query_update_person = """
                 UPDATE people
-                SET contacted_status = 'pending'
+                SET contacted_status = 'pending',
+                    last_contacted_at = NOW()
                 WHERE id = $1
             """
         async with pool.acquire(timeout=10.0) as conn:

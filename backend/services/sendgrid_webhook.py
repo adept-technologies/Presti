@@ -42,7 +42,6 @@ async def update_contacted_status(events):
         # Build a map of emails to deduplicate and store their highest precedence status
         email_updates_map = {}
         for event in events:
-            logger.info(f"Event is: {event}")
             email = event.get("to_email")
             sl_event = event.get("event_type")
             update_info = EVENT_STATUS_MAP.get(sl_event)
