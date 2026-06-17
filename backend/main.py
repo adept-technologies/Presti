@@ -6,14 +6,14 @@ from config.logging_config import setup_logging
 import logging
 from quart import Quart, jsonify, request, send_file, send_from_directory
 from quart_cors import cors
-from services.db_service import fetch_emails_sent, unsubscribe_user, get_user_by_token, add_company_note, delete_company_note, fetch_companies, fetch_people, fetch_company_details, fetch_events, mark_lead_replied, mark_lead_positive, fetch_engagement_metrics
+from services.db_service import fetch_emails_sent, unsubscribe_user, get_user_by_token, add_company_note, delete_company_note, fetch_companies, fetch_people, fetch_company_details, fetch_events, mark_lead_replied, mark_lead_positive, fetch_engagement_metrics, fetch_icp_settings, fetch_companies
 from services.email_sending import *
 from services.sendgrid_webhook import *
 from services.export_to_excel import export_to_excel
 from import_excel.import_excel import main as import_excel_main
 from orchestration.main import main as orchestration_main 
 from orchestration.outreach import main as outreach_main
-from orchestration.scoring import score_and_store
+from orchestration.scoring import score_and_store, normalize_icp
 import httpx
 from utils.find_missing_people import find_missing_people
 from healthcheck import HealthCheck
@@ -132,9 +132,6 @@ async def background_rescore_for_user(auth0_id: str):
     logger.info("Background rescoring started for user: %s", auth0_id)
     try:
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
-            from services.db_service import fetch_companies, fetch_icp_settings
-            from orchestration.scoring import score_and_store, normalize_icp
-            
             companies = await fetch_companies(auth0_id)
             if not companies:
                 logger.info("No companies found to re-score")
