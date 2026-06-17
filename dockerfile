@@ -36,8 +36,8 @@ ENV QUART_RUN_HOST=0.0.0.0
 EXPOSE 5050
 
 # Run as non-root user(user nobody) for security (remediates Semgrep dockerfile.security.missing-user finding)
-# Transfer ownership of ONLY the log directory to nobody.
-RUN chown -R nobody:nogroup /app/config
+# Transfer ownership of the entire app directory to nobody so it can write log/webhook files.
+RUN chown -R nobody:nogroup /app
 
 USER nobody
 

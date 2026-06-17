@@ -25,6 +25,15 @@ from utils.auth import requires_auth
 setup_logging()
 logger = logging.getLogger(__name__)
 
+def handle_task_result(task: asyncio.Task) -> None:
+    """Callback attached to background tasks so exceptions are never silently lost."""
+    try:
+        task.result()
+    except asyncio.CancelledError:
+        pass
+    except Exception:
+        logger.exception("Unhandled exception in background task: %s", task.get_name())
+
 #The Database in use
 load_dotenv()  # Never override env vars already set by Docker Compose / the OS
 DB_URL = os.getenv("DATABASE_URL")
@@ -201,8 +210,11 @@ async def main():
 
 # Feeder function for /outreach
 async def outreach_task(org_ids):
+    try:
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
             await outreach_main(pool, organization_ids=org_ids)
+    except Exception:
+        logger.exception("Unhandled exception in outreach_task")
 
 @app.route('/outreach', methods=["POST"])
 @requires_auth
@@ -316,7 +328,8 @@ async def smartlead_events_webhook():
         # This allows the webhook to return 200 OK immediately and prevents loop collisions
         loop = asyncio.get_event_loop()
         if loop.is_running():
-            loop.create_task(update_contacted_status(events))
+            task = loop.create_task(update_contacted_status(events))
+            task.add_done_callback(handle_task_result)
         else:
             # Fallback if no loop is running (unlikely during active orchestration)
             asyncio.run(update_contacted_status(events))
