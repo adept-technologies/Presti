@@ -1105,8 +1105,6 @@ async def unsubscribe_user(pool: asyncpg.Pool, token: str) -> bool:
         logger.error(f"Unexpected error while unsubscribing user: {str(e)}")
         return False
 
-
-
 async def mark_lead_replied(company_id: int, is_replied: bool) -> bool:
     """Updates the contacted_status of a company to 'replied' or its previous state."""
     logger.info(f"Marking company {company_id} replied: {is_replied}")
