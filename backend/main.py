@@ -1,6 +1,7 @@
 import asyncio
 import asyncpg
 import os
+import uuid
 from dotenv import load_dotenv
 from config.logging_config import setup_logging
 import logging
@@ -433,6 +434,8 @@ async def unsubscribe():
         else:
             data = await request.json
             token = data.get('token') if data else None
+
+        logger.info("Requested token: %r, length: %r", token, len(token) if token else None)
         
         if not token:
             if request.method == 'GET':
@@ -440,8 +443,14 @@ async def unsubscribe():
             return jsonify({"success": False, "message": "Token is required"}), 400
         
         # 2. Perform unsubscribe
+        try:
+            parsed_token = uuid.UUID(token)
+        except ValueError as e:
+            logger.error("Invalid UUID: %r", str(e))
+            return jsonify({"success": False, "message": "Invalid unsubscribe token"}), 400
+
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
-            success = await unsubscribe_user(pool, token)
+            success = await unsubscribe_user(pool, parsed_token)
             
             if success:
                 if request.method == 'GET':
