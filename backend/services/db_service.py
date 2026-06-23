@@ -1242,7 +1242,7 @@ async def fetch_engagement_metrics() -> Dict[str, Any]:
         if conn: await conn.close()
         return {}
 
-async def fetch_icp_settings(pool, auth0_id: str, setting_id: int = None) -> dict:
+async def fetch_icp_settings(pool, auth0_id: str, setting_id: Optional[int] = None) -> dict:
     if setting_id:
         query = "SELECT settings FROM icp_settings WHERE auth0_id = $1 AND id = $2 LIMIT 1"
         args = [auth0_id, setting_id]
@@ -1335,7 +1335,7 @@ async def set_active_icp_setting(pool, auth0_id: str, setting_id: int) -> bool:
 
 
 # TO DO => fix the format of geography
-async def upsert_icp_settings(pool, auth0_id: str, settings: dict, name: str = 'Default', setting_id: int = None) -> Optional[dict]:
+async def upsert_icp_settings(pool, auth0_id: str, settings: dict, name: str = 'Default', setting_id: Optional[int] = None) -> Optional[dict]:
     resolved = {
         "age": [tuple(entry) for entry in settings.get("age", icp["age"])],
         "employee_count": [tuple(entry) for entry in settings.get("employee_count", icp["employee_count"])],
