@@ -1,5 +1,25 @@
 <div style="width:100%; margin: 0; padding: 24px; box-sizing: border-box; overflow-x: hidden;">
-    <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 700; margin-bottom: 24px;">Configure ICP</h2>
+    <!-- Top Header & Selector Row -->
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; flex-wrap: wrap;">
+        <h2 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 700; margin: 0;">Configure ICP</h2>
+
+        <!-- ICP Setting Selector -->
+        <div style="display: flex; align-items: center; gap: 16px; padding: 8px 12px; background: var(--bg-surface, transparent); border-radius: 8px; border: 1px solid var(--border-color, rgba(255,255,255,0.1));">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <label style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">ICP Profile:</label>
+                <select (change)="onSettingSelected($event)"
+                        style="padding: 10px 16px; border-radius: 0; border: 2px solid var(--border-color, #f9f9f9); background-color: var(--bg-filter, transparent); color: var(--text-primary); font-family: var(--font-family-base, inherit); font-weight: 600; font-size: 0.9rem; cursor: pointer; min-width: 200px; outline: none;">
+                    <option *ngFor="let s of allSettings" [value]="s.id" [selected]="s.is_active" style="background-color: var(--bg-surface, #fff); color: var(--text-primary);">
+                        {{ s.name }}
+                    </option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <app-button [buttonText]="'New Profile'" [icon]="'add'" [iconPosition]="'left'" [buttonStyleClass]="'icp-btn-green'" (click)="onNewSetting()"></app-button>
+                <app-button [buttonText]="'Delete Profile'" [icon]="'delete'" [iconPosition]="'left'" [buttonStyleClass]="'icp-btn-red'" [disabled]="allSettings.length <= 1" (click)="onDeleteSetting()"></app-button>
+            </div>
+        </div>
+    </div>
 
     <form [formGroup]="form">
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; align-items: start;">

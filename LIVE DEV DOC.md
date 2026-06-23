@@ -238,3 +238,17 @@ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 ALTER TABLE mock_icp_scores ADD COLUMN auth0_id VARCHAR(255);
+
+#
+
+-- 1. Add name column with default for existing rows
+ALTER TABLE icp_settings ADD COLUMN name VARCHAR(255) NOT NULL DEFAULT 'Default';
+
+-- 2. Add is_active flag (existing row becomes the active one)
+ALTER TABLE icp_settings ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- 3. Drop the old unique constraint (one setting per user)
+ALTER TABLE icp_settings DROP CONSTRAINT mock_icp_settings_auth0_id_key;
+
+-- 4. Add new unique constraint (one name per user, prevents duplicates)
+ALTER TABLE icp_settings ADD CONSTRAINT icp_settings_auth0_id_name_key UNIQUE (auth0_id, name);
