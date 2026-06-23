@@ -1242,13 +1242,18 @@ async def fetch_engagement_metrics() -> Dict[str, Any]:
         if conn: await conn.close()
         return {}
 
-async def fetch_icp_settings(pool, auth0_id: str):
-    query = "SELECT settings FROM icp_settings WHERE auth0_id = $1 LIMIT 1"
+async def fetch_icp_settings(pool, auth0_id: str, setting_id: int = None) -> dict:
+    if setting_id:
+        query = "SELECT settings FROM icp_settings WHERE auth0_id = $1 AND id = $2 LIMIT 1"
+        args = [auth0_id, setting_id]
+    else:
+        query = "SELECT settings FROM icp_settings WHERE auth0_id = $1 AND is_active = TRUE LIMIT 1"
+        args = [auth0_id]
 
     conn = None
     try:
         async with pool.acquire(timeout=10.0) as conn:
-            row = await conn.fetchrow(query, auth0_id)
+            row = await conn.fetchrow(query, *args)
         if row and 'settings' in row and row['settings'] is not None:
             return json.loads(row['settings'])
         return {}
@@ -1260,8 +1265,77 @@ async def fetch_icp_settings(pool, auth0_id: str):
         return {}
 
 
+async def fetch_all_icp_settings(pool, auth0_id: str) -> list:
+    query = "SELECT id, name, is_active FROM icp_settings WHERE auth0_id = $1 ORDER BY created_at ASC"
+    try:
+        async with pool.acquire(timeout=10.0) as conn:
+            rows = await conn.fetch(query, auth0_id)
+        return [dict(row) for row in rows]
+    except Exception as e:
+        logger.error(f"Failed to fetch all icp settings for user {auth0_id}: {str(e)}")
+        return []
+
+
+async def delete_icp_setting(pool, auth0_id: str, setting_id: int) -> bool:
+    try:
+        async with pool.acquire(timeout=10.0) as conn:
+            async with conn.transaction():
+                # Check if the setting exists and get its active status
+                setting_row = await conn.fetchrow(
+                    "SELECT is_active FROM icp_settings WHERE auth0_id = $1 AND id = $2",
+                    auth0_id, setting_id
+                )
+                if not setting_row:
+                    return False
+                
+                # Delete the setting
+                await conn.execute(
+                    "DELETE FROM icp_settings WHERE auth0_id = $1 AND id = $2",
+                    auth0_id, setting_id
+                )
+                
+                # If deleted setting was active, activate another setting if available
+                if setting_row['is_active']:
+                    next_setting = await conn.fetchrow(
+                        "SELECT id FROM icp_settings WHERE auth0_id = $1 ORDER BY created_at ASC LIMIT 1",
+                        auth0_id
+                    )
+                    if next_setting:
+                        await conn.execute(
+                            "UPDATE icp_settings SET is_active = TRUE WHERE id = $1",
+                            next_setting['id']
+                        )
+                return True
+    except Exception as e:
+        logger.error(f"Failed to delete icp setting {setting_id} for user {auth0_id}: {str(e)}")
+        return False
+
+
+async def set_active_icp_setting(pool, auth0_id: str, setting_id: int) -> bool:
+    try:
+        async with pool.acquire(timeout=10.0) as conn:
+            async with conn.transaction():
+                # Verify that this setting belongs to this user
+                exists = await conn.fetchval(
+                    "SELECT 1 FROM icp_settings WHERE auth0_id = $1 AND id = $2",
+                    auth0_id, setting_id
+                )
+                if not exists:
+                    return False
+                
+                # Deactivate all and activate target
+                await conn.execute(
+                    "UPDATE icp_settings SET is_active = (id = $2) WHERE auth0_id = $1",
+                    auth0_id, setting_id
+                )
+                return True
+    except Exception as e:
+        logger.error(f"Failed to set active icp setting {setting_id} for user {auth0_id}: {str(e)}")
+        return False
+
+
 # TO DO => fix the format of geography
-async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
+async def upsert_icp_settings(pool, auth0_id: str, settings: dict, name: str = 'Default', setting_id: int = None) -> Optional[dict]:
     resolved = {
         "age": [tuple(entry) for entry in settings.get("age", icp["age"])],
         "employee_count": [tuple(entry) for entry in settings.get("employee_count", icp["employee_count"])],
@@ -1289,26 +1363,73 @@ async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
         "weights": settings.get("weights", weights),
     }
 
-    """Insert or update ICP settings for a given auth0_id."""
-    query = """
-    INSERT INTO icp_settings (auth0_id, settings, created_at, updated_at)
-    VALUES ($1, $2::jsonb, NOW(), NOW())
-    ON CONFLICT (auth0_id)
-    DO UPDATE SET settings = EXCLUDED.settings, updated_at = NOW();
-    """
-
     conn = None
     try:
         async with pool.acquire(timeout=10.0) as conn:
-            await conn.execute(query, auth0_id, json.dumps(resolved))
-        logger.info("Updated ICP settings for %s", auth0_id)
-        return True
+            async with conn.transaction():
+                # If setting_id is provided, check if it exists and belongs to this user.
+                # If setting_id is not provided, check if we already have a setting with the same name.
+                # If so, we'll update it. Otherwise, insert new.
+                if setting_id:
+                    # Update existing by id
+                    # First deactivate all others if this one is active, or we can just make it active
+                    await conn.execute("UPDATE icp_settings SET is_active = FALSE WHERE auth0_id = $1", auth0_id)
+                    row = await conn.fetchrow(
+                        """
+                        UPDATE icp_settings 
+                        SET settings = $1::jsonb, name = $2, is_active = TRUE, updated_at = NOW() 
+                        WHERE auth0_id = $3 AND id = $4
+                        RETURNING id, name
+                        """,
+                        json.dumps(resolved), name, auth0_id, setting_id
+                    )
+                    if not row:
+                        # Fallback: maybe the ID didn't match auth0_id, let's insert a new one
+                        row = await conn.fetchrow(
+                            """
+                            INSERT INTO icp_settings (auth0_id, settings, name, is_active, created_at, updated_at)
+                            VALUES ($1, $2::jsonb, $3, TRUE, NOW(), NOW())
+                            RETURNING id, name
+                            """,
+                            auth0_id, json.dumps(resolved), name
+                        )
+                else:
+                    # No setting_id: check if name already exists for this user to update or insert
+                    existing = await conn.fetchrow(
+                        "SELECT id FROM icp_settings WHERE auth0_id = $1 AND name = $2",
+                        auth0_id, name
+                    )
+                    await conn.execute("UPDATE icp_settings SET is_active = FALSE WHERE auth0_id = $1", auth0_id)
+                    if existing:
+                        row = await conn.fetchrow(
+                            """
+                            UPDATE icp_settings
+                            SET settings = $1::jsonb, is_active = TRUE, updated_at = NOW()
+                            WHERE id = $2 AND auth0_id = $3
+                            RETURNING id, name
+                            """,
+                            json.dumps(resolved), existing['id'], auth0_id
+                        )
+                    else:
+                        row = await conn.fetchrow(
+                            """
+                            INSERT INTO icp_settings (auth0_id, settings, name, is_active, created_at, updated_at)
+                            VALUES ($1, $2::jsonb, $3, TRUE, NOW(), NOW())
+                            RETURNING id, name
+                            """,
+                            auth0_id, json.dumps(resolved), name
+                        )
+                
+                if row:
+                    logger.info("Updated/inserted ICP settings '%s' (ID: %s) for %s", row['name'], row['id'], auth0_id)
+                    return dict(row)
+        return None
     except asyncpg.PostgresError as e:
         logger.error(f"Database error while upserting icp settings: {str(e)}")
-        return False
+        return None
     except Exception as e:
         logger.error(f"Unexpected error while upserting icp settings: {str(e)}")
-        return False
+        return None
 
 if __name__ == "__main__":
     async def main():
@@ -1370,7 +1491,7 @@ if __name__ == "__main__":
         }
         async with asyncpg.create_pool(dsn=DB_URL, min_size=1, max_size=10) as pool:
             # x = await get_hiring_area("14.ai", pool)
-            await upsert_icp_settings(pool, "auth0|6a0329e290f1881ac4d163b4", settings)
-            pass
+            x = await fetch_icp_settings(pool, "auth0|6a0329e290f1881ac4d163b4", 1)
+            print(x)
 
     asyncio.run(main())

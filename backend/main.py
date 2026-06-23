@@ -7,7 +7,7 @@ from config.logging_config import setup_logging
 import logging
 from quart import Quart, jsonify, request, send_file, send_from_directory
 from quart_cors import cors
-from services.db_service import fetch_emails_sent, unsubscribe_user, get_user_by_token, add_company_note, delete_company_note, fetch_companies, fetch_people, fetch_company_details, fetch_events, mark_lead_replied, mark_lead_positive, fetch_engagement_metrics, fetch_icp_settings, fetch_companies
+from services.db_service import fetch_emails_sent, unsubscribe_user, get_user_by_token, add_company_note, delete_company_note, fetch_companies, fetch_people, fetch_company_details, fetch_events, mark_lead_replied, mark_lead_positive, fetch_engagement_metrics, fetch_icp_settings, fetch_all_icp_settings, delete_icp_setting, set_active_icp_setting
 from services.email_sending import *
 from services.sendgrid_webhook import *
 from services.export_to_excel import export_to_excel
@@ -120,10 +120,27 @@ async def settings_get_icp():
     If no settings found, return empty object with 200 so frontend can trigger modal.
     """
     try:
-        auth0_id = request.user.get('sub') or request.user.get('user_id') or request.user.get('sub')
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
         async with asyncpg.create_pool(dsn=DB_URL) as pool:
-            settings = await fetch_icp_settings(pool, auth0_id)
-        return jsonify({'icp': settings or {}}), 200
+            settings_all = await fetch_all_icp_settings(pool, auth0_id)
+            
+            # Find active setting
+            active_setting = None
+            for s in settings_all:
+                if s.get('is_active'):
+                    active_setting = s
+                    break
+            
+            settings = {}
+            if active_setting:
+                settings = await fetch_icp_settings(pool, auth0_id, active_setting['id'])
+            
+            return jsonify({
+                'icp': settings or {},
+                'active_id': active_setting['id'] if active_setting else None,
+                'active_name': active_setting['name'] if active_setting else None,
+                'all_settings': settings_all
+            }), 200
     except Exception as e:
         logger.error(f"Failed to fetch ICP settings: {str(e)}")
         return jsonify({'Error': 'Failed to fetch ICP settings', 'Message': str(e)}), 500
@@ -160,18 +177,53 @@ async def settings_upsert_icp():
         if not data or 'icp' not in data:
             return jsonify({'Error': 'Missing icp payload'}), 400
 
-        auth0_id = request.user.get('sub') or request.user.get('user_id') or request.user.get('sub')
-        async with asyncpg.create_pool(dsn=DB_URL) as pool:
-            success = await upsert_icp_settings(pool, auth0_id, data['icp'])
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
+        name = data.get('name', 'Default')
+        setting_id = data.get('setting_id')
 
-        if success:
+        async with asyncpg.create_pool(dsn=DB_URL) as pool:
+            result = await upsert_icp_settings(pool, auth0_id, data['icp'], name, setting_id)
+
+        if result:
             app.add_background_task(background_rescore_for_user, auth0_id)
-            return jsonify({'Success': True}), 200
+            return jsonify({'Success': True, 'setting': result}), 200
         else:
             return jsonify({'Error': 'Failed to save settings'}), 500
     except Exception as e:
         logger.error(f"Failed to upsert ICP settings: {str(e)}")
         return jsonify({'Error': 'Failed to save settings', 'Message': str(e)}), 500
+
+@app.route('/settings/icp/<int:setting_id>', methods=['DELETE'])
+@requires_auth
+async def settings_delete_icp(setting_id):
+    try:
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
+        async with asyncpg.create_pool(dsn=DB_URL) as pool:
+            success = await delete_icp_setting(pool, auth0_id, setting_id)
+        if success:
+            app.add_background_task(background_rescore_for_user, auth0_id)
+            return jsonify({'Success': True}), 200
+        else:
+            return jsonify({'Error': 'Failed to delete setting'}), 400
+    except Exception as e:
+        logger.error(f"Failed to delete ICP setting: {str(e)}")
+        return jsonify({'Error': 'Failed to delete setting', 'Message': str(e)}), 500
+
+@app.route('/settings/icp/<int:setting_id>/activate', methods=['POST'])
+@requires_auth
+async def settings_activate_icp(setting_id):
+    try:
+        auth0_id = request.user.get('sub') or request.user.get('user_id')
+        async with asyncpg.create_pool(dsn=DB_URL) as pool:
+            success = await set_active_icp_setting(pool, auth0_id, setting_id)
+        if success:
+            app.add_background_task(background_rescore_for_user, auth0_id)
+            return jsonify({'Success': True}), 200
+        else:
+            return jsonify({'Error': 'Failed to activate setting'}), 400
+    except Exception as e:
+        logger.error(f"Failed to activate ICP setting: {str(e)}")
+        return jsonify({'Error': 'Failed to activate setting', 'Message': str(e)}), 500
 
 
 # =============================================================================

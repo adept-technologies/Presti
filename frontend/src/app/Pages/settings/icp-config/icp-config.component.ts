@@ -133,6 +133,10 @@ export class IcpConfigComponent implements OnInit {
     form: FormGroup;
     activeDropdown: string | null = null;
 
+    allSettings: any[] = [];
+    activeSettingId: number | null = null;
+    activeSettingName: string = 'Default';
+
     allAges = [
         { label: '0-2', value: '0,2' },
         { label: '3-5', value: '3,5' },
@@ -274,11 +278,60 @@ export class IcpConfigComponent implements OnInit {
     }
 
     ngOnInit() {
+        this.loadSettings();
+    }
+
+    loadSettings() {
         this.icpService.getSettings().subscribe({
             next: (res) => {
                 console.log('Loaded ICP settings', res);
+                this.allSettings = res?.all_settings || [];
+                this.activeSettingId = res?.active_id || null;
+                this.activeSettingName = res?.active_name || 'Default';
+
                 const icp = res?.icp;
-                if (!icp) return;
+                if (!icp || Object.keys(icp).length === 0) {
+                    this.form.reset({
+                        age_100: ['0,2'],
+                        age_70: ['3,5'],
+                        age_50: ['6,10'],
+                        age_30: ['11,20'],
+
+                        emp_100: ['6,15'],
+                        emp_80: ['1,5'],
+                        emp_70: ['16,20'],
+                        emp_40: ['21,50'],
+                        emp_20: ['51,100'],
+
+                        fund_100: ['series_a'],
+                        fund_90: ['seed'],
+                        fund_50: ['pre_seed'],
+                        fund_40: ['grant'],
+                        fund_30: ['bootstrapped'],
+                        fund_10: ['series_b'],
+
+                        industry_100: ['fintech', 'ecommerce', 'saas'],
+                        industry_70: ['healthtech'],
+                        industry_30: ['education'],
+
+                        geo_primary: ['netherlands', 'germany', 'united kingdom', 'ireland'],
+                        geo_eastern: ['eastern_eu_wedge'],
+                        geo_na: ['north_america'],
+                        geo_west: ['western_eu_rest'],
+
+                        kw_outsource: ['outsourcing_terms'],
+                        kw_remote: ['remote_hiring_terms'],
+                        kw_generic: ['generic_terms'],
+
+                        weight_geography: 0.30,
+                        weight_funding_stage: 0.20,
+                        weight_employee_count: 0.15,
+                        weight_age: 0.15,
+                        weight_industry: 0.15,
+                        weight_keywords: 0.05
+                    });
+                    return;
+                }
 
                 const patch: any = {};
 
@@ -374,6 +427,55 @@ export class IcpConfigComponent implements OnInit {
                 this.form.patchValue(patch);
             },
             error: (err) => console.error('Failed to load ICP settings', err)
+        });
+    }
+
+    onSettingSelected(event: Event) {
+        const select = event.target as HTMLSelectElement;
+        const id = Number(select.value);
+        if (!id) return;
+        this.icpService.activateSetting(id).subscribe({
+            next: () => {
+                console.log(`Activated setting ${id}`);
+                this.loadSettings();
+            },
+            error: (err) => {
+                console.error('Failed to activate setting', err);
+                alert('Failed to activate setting');
+            }
+        });
+    }
+
+    onNewSetting() {
+        const name = prompt('Enter a name for the new ICP profile:');
+        if (!name || !name.trim()) return;
+
+        const payload = this.buildPayload();
+        this.icpService.saveSettings(payload, name.trim()).subscribe({
+            next: (res: any) => {
+                alert('New ICP profile created!');
+                this.loadSettings();
+            },
+            error: (err) => {
+                console.error('Failed to create setting', err);
+                alert('Failed to create setting');
+            }
+        });
+    }
+
+    onDeleteSetting() {
+        if (!this.activeSettingId) return;
+        if (!confirm(`Are you sure you want to delete the profile "${this.activeSettingName}"?`)) return;
+
+        this.icpService.deleteSetting(this.activeSettingId).subscribe({
+            next: () => {
+                alert('ICP profile deleted!');
+                this.loadSettings();
+            },
+            error: (err) => {
+                console.error('Failed to delete setting', err);
+                alert('Failed to delete setting');
+            }
         });
     }
 
@@ -476,7 +578,7 @@ export class IcpConfigComponent implements OnInit {
     saveICPSettings() {
         const payload = this.buildPayload();
         console.log('Saving ICP payload', payload);
-        this.icpService.saveSettings(payload).subscribe({
+        this.icpService.saveSettings(payload, this.activeSettingName, this.activeSettingId || undefined).subscribe({
             next: () => alert('ICP settings saved!'),
             error: (err) => alert(`Failed to save ICP settings: ${err}`)
         });
