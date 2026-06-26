@@ -140,32 +140,33 @@ if __name__ == "__main__":
     - Schedule — days_of_the_week uses 0–6 (Sun=0, Sat=6); adjust hours and timezone as needed
     """
     async def main():
-        # Parse email account ID from environment
-        email_account_ids = []
-        if SMARTLEAD_EMAIL_ACCOUNT_ID:
-            email_account_ids = [
-                int(x.strip()) 
-                for x in SMARTLEAD_EMAIL_ACCOUNT_ID.split(",") 
-                if x.strip().isdigit()
-            ]
+        ## Parse email account ID from environment
+        #email_account_ids = []
+        #if SMARTLEAD_EMAIL_ACCOUNT_ID:
+            #email_account_ids = [
+                #int(x.strip()) 
+                #for x in SMARTLEAD_EMAIL_ACCOUNT_ID.split(",") 
+                #if x.strip().isdigit()
+            #]
         
-        if not email_account_ids:
-            logger.error("SMARTLEAD_EMAIL_ACCOUNT_ID is not set or invalid.")
-            return
+        #if not email_account_ids:
+            #logger.error("SMARTLEAD_EMAIL_ACCOUNT_ID is not set or invalid.")
+            #return
 
         async with httpx.AsyncClient(timeout=30.0) as client:
+            campaign_id = 'INSERT CAMPAIGN ID HERE'
             try:
-                # 1. Create campaign
-                campaign_id = await create_campaign("My Test Campaign", client) 
-                print(f"✓ Campaign created with ID: {campaign_id}") 
+                ## 1. Create campaign
+                #campaign_id = await create_campaign("My Test Campaign", client) 
+                #print(f"✓ Campaign created with ID: {campaign_id}") 
                 
-                # 2. Add sequences
-                #await add_sequences(campaign_id, client) 
-                #print("✓ Sequences added") 
+                ## 2. Add sequences
+                ##await add_sequences(campaign_id, client) 
+                ##print("✓ Sequences added") 
                 
-                # 3. Connect email accounts
-                await connect_email_accounts(campaign_id, email_account_ids, client) 
-                print("✓ Accounts connected") 
+                ## 3. Connect email accounts
+                #await connect_email_accounts(campaign_id, email_account_ids, client) 
+                #print("✓ Accounts connected") 
                 
                 # 4. Add leads
                 lead_payload = {
@@ -183,16 +184,16 @@ if __name__ == "__main__":
                     ]
                 }
 
-                #await add_leads(campaign_id, leads, client) 
-                #print("✓ Leads added") 
+                await add_leads(campaign_id, lead_payload['lead_list'], client) 
+                print("✓ Leads added") 
                 
-                # 5. Configure schedule
-                #await configure_schedule(campaign_id, client) 
-                #print("✓ Schedule set") 
+                ## 5. Configure schedule
+                ##await configure_schedule(campaign_id, client) 
+                ##print("✓ Schedule set") 
                 
-                # 6. Update settings
-                await update_settings(campaign_id, client) 
-                print("✓ Settings updated") 
+                ## 6. Update settings
+                #await update_settings(campaign_id, client) 
+                #print("✓ Settings updated") 
                 
                 # 7. Launch campaign
                 await launch_campaign(campaign_id, client) 

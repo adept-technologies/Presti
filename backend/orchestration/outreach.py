@@ -136,6 +136,7 @@ async def process_person(person: Dict[str, Any], pool) -> bool:
             hiring_area=hiring_area,
             funding_round=funding_round,
         )
+    
     except (KeyError, AttributeError) as e:
         logger.error(
             "Failed to format email template for person_id=%s: %s", person_id, e
@@ -155,7 +156,7 @@ async def process_person(person: Dict[str, Any], pool) -> bool:
         )
     except Exception as e:
         logger.error(
-            "SendGrid error for person_id=%s (email=%s): %s", person_id, email, e
+            "Outreach error for person_id=%s (email=%s): %s", person_id, email, e
         )
         return True
 
@@ -327,6 +328,17 @@ if __name__ == "__main__":
             min_size=1,
             max_size=100,
         ) as pool:
-            await main(pool)
+            #await main(pool)
+            person = {
+                'id': 266,
+                'first_name': 'suono',
+                'last_name': 'ventures',
+                'email': 'suonoventures@gmail.com',
+                'title': 'software engineer',
+                'organization_id': '65f94b98bdff7f01c604e97c',
+                'unsubscribe_token': 'abcdefgh-12345678-ijklmnop-87654321',
+                'times_contacted': 1
+            }
+            await process_person(person, pool)
 
     asyncio.run(runner())
