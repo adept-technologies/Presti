@@ -138,7 +138,7 @@ if __name__ == "__main__":
     async def main():
         from services.db_service import fetch_company_details
 
-        fetched_company = await fetch_company_details(334, "auth0|6a0329e290f1881ac4d163b4")
+        fetched_company = await fetch_company_details(321, "auth0|6a0329e290f1881ac4d163b4")
         print(fetched_company)
 
         name = fetched_company.get('name')
