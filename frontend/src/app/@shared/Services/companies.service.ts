@@ -64,8 +64,15 @@ export class CompaniesService {
   }
 
   // ✅ Fetch engagement metrics for dashboard
-  fetchEngagementMetrics(): Observable<any> {
-    return this.http.get(`${this.backend_url}/engagement-metrics`);
+  fetchEngagementMetrics(startDate?: string, endDate?: string): Observable<any> {
+    let params = '';
+    if (startDate) params += `start_date=${startDate}`;
+    if (startDate && endDate) params += '&';
+    if (endDate) params += `end_date=${endDate}`;
+    const url = params
+      ? `${this.backend_url}/engagement-metrics?${params}`
+      : `${this.backend_url}/engagement-metrics`;
+    return this.http.get(url);
   }
 
   // ✅ Fetch warmup stats from Smartlead

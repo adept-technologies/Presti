@@ -1,76 +1,292 @@
-<div class="analytics-container" *ngIf="metrics">
-  <!-- KPIs -->
-  <div class="kpi-row">
-    <div class="kpi-card">
-      <div class="kpi-label">TOTAL SENT</div>
-      <div class="kpi-value">{{ metrics?.outreach_kpis?.total_sent || 0 }}</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">OPEN RATE</div>
-      <div class="kpi-value">
-        {{ metrics?.outreach_kpis?.total_sent ? (metrics.outreach_kpis.opened / metrics.outreach_kpis.total_sent * 100).toFixed(1) : '0.0' }}%
-      </div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">CLICK RATE</div>
-      <div class="kpi-value">
-        {{ metrics?.outreach_kpis?.total_sent ? (metrics.outreach_kpis.clicked / metrics.outreach_kpis.total_sent * 100).toFixed(1) : '0.0' }}%
-      </div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">REPLY RATE</div>
-      <div class="kpi-value">
-        {{ metrics?.outreach_kpis?.total_sent ? (metrics.outreach_kpis.replied / metrics.outreach_kpis.total_sent * 100).toFixed(1) : '0.0' }}%
-      </div>
-    </div>
-    <div class="kpi-card positive">
-      <div class="kpi-label">POSITIVE REPLIES</div>
-      <div class="kpi-value">{{ metrics?.outreach_kpis?.positive_replies || 0 }}</div>
-    </div>
-  </div>
-
-  <div class="dashboard-grid">
-    <!-- Row 1 -->
-    <div class="chart-card">
-      <h3>Lifecycle Funnel</h3>
-      <div class="chart-container">
-        <canvas id="funnelChart"></canvas>
-      </div>
-    </div>
-
-    <div class="chart-card">
-      <h3>Engagement Breakdown</h3>
-      <div class="chart-container">
-        <canvas id="breakdownChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Row 2 -->
-    <div class="chart-card">
-      <h3>ICP Score Distribution</h3>
-      <div class="chart-container">
-        <canvas id="icpDistChart"></canvas>
-      </div>
-    </div>
-
-    <div class="chart-card">
-      <h3>Response Rate by Company Size</h3>
-      <div class="chart-container">
-        <canvas id="sizeMetricsChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Row 3 -->
-    <div class="chart-card full-width">
-      <h3>Service Traction (Replies per Service)</h3>
-      <div class="chart-container tall">
-        <canvas id="serviceTractionChart"></canvas>
-      </div>
-    </div>
-  </div>
-</div>
-
+<!-- ─── Loading ─────────────────────────────────────────────────────────────── -->
 <div class="loading-state" *ngIf="!metrics">
   <div class="spinner"></div>
-  <p>Loading Lead Generation Analytics...</p>
+  <p>Loading analytics...</p>
+</div>
+
+<!-- ─── Main Dashboard ──────────────────────────────────────────────────────── -->
+<div class="analytics-page" *ngIf="metrics">
+
+  <!-- Sticky Header + Date Picker -->
+  <header class="dash-header">
+    <div class="header-inner">
+      <h1>Lead Gen Analytics <span class="badge">LIVE</span></h1>
+
+      <div class="date-controls">
+        <label>From</label>
+        <input id="date-start" type="date" [(ngModel)]="startDate" />
+        <label>To</label>
+        <input id="date-end" type="date" [(ngModel)]="endDate" />
+        <button id="btn-apply-dates" class="btn-apply" (click)="applyDateFilter()">Apply</button>
+        <button id="btn-reset-dates" class="btn-reset" (click)="resetDateFilter()">All time</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav" role="tablist">
+    <button id="tab-overview" class="tab-btn" [class.active]="activeTab === 'overview'" (click)="setTab('overview')" role="tab">
+      <span class="tab-icon">📊</span> OVERVIEW
+      <span class="tab-info" data-tooltip="High-level snapshot of the entire pipeline. Shows how leads have grown over time, where they are in the outreach lifecycle, and which services are generating the most traction.">
+        <span class="material-icons">info</span>
+      </span>
+    </button>
+    <button id="tab-pipeline" class="tab-btn" [class.active]="activeTab === 'pipeline'" (click)="setTab('pipeline')" role="tab">
+      <span class="tab-icon">🔄</span> PIPELINE
+      <span class="tab-info" data-tooltip="Tracks leads through every stage of the sales funnel — from uncontacted through to replied. Also shows how company size and funding stage affect reply rates and ICP fit.">
+        <span class="material-icons">info</span>
+      </span>
+    </button>
+    <button id="tab-icp" class="tab-btn" [class.active]="activeTab === 'icp'" (click)="setTab('icp')" role="tab">
+      <span class="tab-icon">🎯</span> ICP
+      <span class="tab-info" data-tooltip="Ideal Customer Profile intelligence. Shows how well the leads in the DB match our target profile, broken down by scoring dimension: geography, funding stage, company age, industry, employee count, and keywords.">
+        <span class="material-icons">info</span>
+      </span>
+    </button>
+    <button id="tab-people" class="tab-btn" [class.active]="activeTab === 'people'" (click)="setTab('people')" role="tab">
+      <span class="tab-icon">👥</span> PEOPLE
+      <span class="tab-info" data-tooltip="Contact-level data for all people found inside target companies. Breaks down contacts by seniority level (C-suite, VP, Manager, etc.) and department, and shows subscription and reply status.">
+        <span class="material-icons">info</span>
+      </span>
+    </button>
+    <button id="tab-outreach" class="tab-btn" [class.active]="activeTab === 'outreach'" (click)="setTab('outreach')" role="tab">
+      <span class="tab-icon">📧</span> OUTREACH
+      <span class="tab-info" data-tooltip="Email campaign performance metrics. Shows open, click, and reply rates across all sequences, and breaks down performance by sequence number — so you can see which follow-up email converts best.">
+        <span class="material-icons">info</span>
+      </span>
+    </button>
+    <button id="tab-geographic" class="tab-btn" [class.active]="activeTab === 'geographic'" (click)="setTab('geographic')" role="tab">
+      <span class="tab-icon">🌍</span> GEOGRAPHIC
+      <span class="tab-info" data-tooltip="Where our leads are located. Shows lead volume and reply rates by country and industry, helping identify which markets and sectors are most responsive to outreach.">
+        <span class="material-icons">info</span>
+      </span>
+    </button>
+  </nav>
+
+  <!-- Hero KPI Bar -->
+  <div class="kpi-bar">
+    <div class="kpi-cell">
+      <div class="kpi-label">Total Leads</div>
+      <div class="kpi-value">{{ metrics?.summary?.total_companies | number }}</div>
+      <div class="kpi-sub">Companies in DB</div>
+    </div>
+    <div class="kpi-cell purple">
+      <div class="kpi-label">Contacts</div>
+      <div class="kpi-value">{{ metrics?.summary?.total_people | number }}</div>
+      <div class="kpi-sub">People found</div>
+    </div>
+    <div class="kpi-cell warning">
+      <div class="kpi-label">Emails Sent</div>
+      <div class="kpi-value">{{ metrics?.summary?.total_emails_sent | number }}</div>
+      <div class="kpi-sub">Across all sequences</div>
+    </div>
+    <div class="kpi-cell positive">
+      <div class="kpi-label">Positive Replies</div>
+      <div class="kpi-value">{{ metrics?.summary?.total_positive_replies | number }}</div>
+      <div class="kpi-sub">Qualified interest</div>
+    </div>
+    <div class="kpi-cell danger">
+      <div class="kpi-label">Unsubscribed</div>
+      <div class="kpi-value">{{ metrics?.summary?.total_unsubscribed | number }}</div>
+      <div class="kpi-sub">Opted out</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-label">Bounced</div>
+      <div class="kpi-value">{{ metrics?.summary?.total_bounced | number }}</div>
+      <div class="kpi-sub">Failed deliveries</div>
+    </div>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="dash-content">
+
+    <!-- ════════════ OVERVIEW ════════════ -->
+    <ng-container *ngIf="activeTab === 'overview'">
+      <div class="chart-grid">
+        <div class="chart-card full-width">
+          <div class="card-header"><h3>Pipeline Growth Over Time</h3><span class="card-badge">Monthly</span></div>
+          <div class="chart-wrap tall"><canvas id="pipelineTimeChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><h3>Lead Lifecycle Funnel</h3><span class="card-badge">All Stages</span></div>
+          <div class="chart-wrap"><canvas id="funnelChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><h3>Service Traction</h3><span class="card-badge">Replies per Service</span></div>
+          <div class="chart-wrap"><canvas id="serviceTractionChart"></canvas></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ════════════ PIPELINE ════════════ -->
+    <ng-container *ngIf="activeTab === 'pipeline'">
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="card-header"><h3>Lifecycle Funnel</h3><span class="card-badge">Contacted Status</span></div>
+          <div class="chart-wrap"><canvas id="funnelChartPipeline"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><h3>Response Rate by Company Size</h3><span class="card-badge">Headcount Buckets</span></div>
+          <div class="chart-wrap"><canvas id="sizeMetricsChart"></canvas></div>
+        </div>
+        <div class="chart-card full-width">
+          <div class="card-header"><h3>Funding Stage Breakdown</h3><span class="card-badge">Lead Count &amp; Avg ICP</span></div>
+          <div class="chart-wrap"><canvas id="fundingChart"></canvas></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ════════════ ICP INTELLIGENCE ════════════ -->
+    <ng-container *ngIf="activeTab === 'icp'">
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="card-header"><h3>ICP Score Distribution</h3><span class="card-badge">Score Buckets</span></div>
+          <div class="chart-wrap"><canvas id="icpDistChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><h3>Average Sub-Score Breakdown</h3><span class="card-badge">Radar</span></div>
+          <div class="chart-wrap"><canvas id="icpRadarChart"></canvas></div>
+        </div>
+        <div class="chart-card full-width">
+          <div class="card-header"><h3>Sub-Score Summary</h3><span class="card-badge">All Dimensions</span></div>
+          <table class="stat-table" *ngIf="metrics?.icp_subscores">
+            <thead>
+              <tr>
+                <th>Dimension</th>
+                <th>Average Score</th>
+                <th>Weight</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Geography</td>     <td>{{ metrics.icp_subscores.avg_geography | number:'1.1-1' }}</td>     <td>30%</td></tr>
+              <tr><td>Funding Stage</td> <td>{{ metrics.icp_subscores.avg_funding | number:'1.1-1' }}</td>       <td>20%</td></tr>
+              <tr><td>Employee Count</td><td>{{ metrics.icp_subscores.avg_employee | number:'1.1-1' }}</td>      <td>15%</td></tr>
+              <tr><td>Company Age</td>   <td>{{ metrics.icp_subscores.avg_age | number:'1.1-1' }}</td>           <td>15%</td></tr>
+              <tr><td>Industry</td>      <td>{{ metrics.icp_subscores.avg_industry | number:'1.1-1' }}</td>      <td>15%</td></tr>
+              <tr><td>Keywords</td>      <td>{{ metrics.icp_subscores.avg_keyword | number:'1.1-1' }}</td>       <td>5%</td></tr>
+              <tr><td>Contactability</td><td>{{ metrics.icp_subscores.avg_contactability | number:'1.1-1' }}</td><td>—</td></tr>
+              <tr><td><strong>Overall</strong></td><td><strong>{{ metrics.icp_subscores.avg_total | number:'1.1-1' }}</strong></td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ════════════ PEOPLE ════════════ -->
+    <ng-container *ngIf="activeTab === 'people'">
+      <div class="chart-grid three">
+        <!-- KPI mini-cards -->
+        <div class="chart-card" *ngIf="metrics?.people_summary">
+          <div class="card-header"><h3>Contact Summary</h3></div>
+          <table class="stat-table">
+            <tbody>
+              <tr><td>Total People</td>          <td>{{ metrics.people_summary.total_people | number }}</td></tr>
+              <tr><td>Subscribed</td>             <td>{{ metrics.people_summary.subscribed | number }}</td></tr>
+              <tr><td>Unsubscribed</td>           <td>{{ metrics.people_summary.unsubscribed | number }}</td></tr>
+              <tr><td>Has Replied</td>            <td>{{ metrics.people_summary.replied | number }}</td></tr>
+              <tr><td>Ever Contacted</td>         <td>{{ metrics.people_summary.contacted | number }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><h3>Seniority Breakdown</h3><span class="card-badge">Doughnut</span></div>
+          <div class="chart-wrap"><canvas id="seniorityChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><h3>Top Departments</h3><span class="card-badge">Top 10</span></div>
+          <div class="chart-wrap"><canvas id="deptChart"></canvas></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ════════════ OUTREACH ════════════ -->
+    <ng-container *ngIf="activeTab === 'outreach'">
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="card-header"><h3>Engagement Rates</h3><span class="card-badge">% of Contacted</span></div>
+          <div class="chart-wrap"><canvas id="breakdownChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><h3>Email Sequence Performance</h3><span class="card-badge">By Sequence #</span></div>
+          <div class="chart-wrap"><canvas id="sequenceChart"></canvas></div>
+        </div>
+        <div class="chart-card full-width" *ngIf="metrics?.outreach_kpis">
+          <div class="card-header"><h3>Outreach Rate Summary</h3><span class="card-badge">All KPIs</span></div>
+          <table class="stat-table">
+            <thead><tr><th>Metric</th><th>Count</th><th>Rate (of Contacted)</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Total Contacted</td>
+                <td>{{ metrics.outreach_kpis.total_sent | number }}</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>Opened</td>
+                <td>{{ metrics.outreach_kpis.opened | number }}</td>
+                <td><span class="rate-pill">{{ openRate }}%</span></td>
+              </tr>
+              <tr>
+                <td>Engaged (Clicked)</td>
+                <td>{{ metrics.outreach_kpis.clicked | number }}</td>
+                <td><span class="rate-pill">{{ clickRate }}%</span></td>
+              </tr>
+              <tr>
+                <td>Replied</td>
+                <td>{{ metrics.outreach_kpis.replied | number }}</td>
+                <td><span class="rate-pill">{{ replyRate }}%</span></td>
+              </tr>
+              <tr>
+                <td>Positive Replies</td>
+                <td>{{ metrics.outreach_kpis.positive_replies | number }}</td>
+                <td><span class="rate-pill">{{ positiveRate }}%</span></td>
+              </tr>
+              <tr>
+                <td>Unsubscribed</td>
+                <td>{{ metrics.outreach_kpis.unsubscribed | number }}</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>Bounced</td>
+                <td>{{ metrics.outreach_kpis.bounced | number }}</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ════════════ GEOGRAPHIC ════════════ -->
+    <ng-container *ngIf="activeTab === 'geographic'">
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="card-header"><h3>Leads by Country</h3><span class="card-badge">Top 15</span></div>
+          <div class="chart-wrap tall"><canvas id="geoChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="card-header"><h3>Leads by Industry</h3><span class="card-badge">Top 15</span></div>
+          <div class="chart-wrap tall"><canvas id="industryChart"></canvas></div>
+        </div>
+        <div class="chart-card full-width">
+          <div class="card-header"><h3>Country Performance</h3><span class="card-badge">Leads &amp; Reply Rate</span></div>
+          <table class="stat-table" *ngIf="metrics?.geo_breakdown?.length">
+            <thead><tr><th>Country</th><th>Leads</th><th>Replies</th><th>Reply Rate</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let g of metrics.geo_breakdown">
+                <td>{{ g.country }}</td>
+                <td>{{ g.total | number }}</td>
+                <td>{{ g.replies | number }}</td>
+                <td>
+                  <span class="rate-pill">
+                    {{ g.total > 0 ? ((g.replies / g.total) * 100 | number:'1.1-1') : '0.0' }}%
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
 </div>

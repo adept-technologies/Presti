@@ -561,7 +561,9 @@ async def save_note(id):
 @requires_auth
 async def get_engagement_metrics():
     try:
-        metrics = await fetch_engagement_metrics()
+        start_date = request.args.get('start_date')  # ISO string: YYYY-MM-DD
+        end_date = request.args.get('end_date')        # ISO string: YYYY-MM-DD
+        metrics = await fetch_engagement_metrics(start_date=start_date, end_date=end_date)
         return jsonify(metrics), 200
     except Exception as e:
         logger.error(f"Failed to fetch engagement metrics: {str(e)}")
