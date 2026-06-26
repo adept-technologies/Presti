@@ -19,8 +19,8 @@ async def send_email(
         subject: str,
         content: str,
         unsubscribe_token: str,
+        sequence_number: int,
         email_from = None,
-        sequence_number: int = 1,
         first_name: str = "",
         last_name: str = "",
         company_name: str = ""
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         company_name = "Adept"
         trigger_type = "funding"
         funding_round = "seed"
-        sequence_number = 1
+        sequence_number = 2
         
         prompt = get_email_generation_prompt(
             company_description=company_description,
@@ -121,7 +121,8 @@ if __name__ == "__main__":
                 content= content,
                 unsubscribe_token = "e3a3c375-cde9-420b-9001-2b188cb2fac8",
                 first_name=first_name,
-                company_name=company_name
+                company_name=company_name,
+                sequence_number=sequence_number
             )
             print("Response:", response)
         except Exception as e:
