@@ -79,7 +79,7 @@ class ICPScorer:
             return None
         industry = industry[0].lower().strip()
         for (industry_list, score) in self.icp["industry"]:
-            if any(industry in ind for ind in industry_list):
+            if any(ind in industry for ind in industry_list):
                 return score
         return 0
 
@@ -107,17 +107,12 @@ class ICPScorer:
         }
 
         weighted_sum = 0.0
-        active_weight_sum = 0.0
 
         for dimension, (score, weight) in dimension_results.items():
-            if score is not None:
-                weighted_sum += score * weight
-                active_weight_sum += weight
+            score = score if score is not None else 0
+            weighted_sum += score * weight
 
-        if active_weight_sum == 0:
-            total_score = 0.0
-        else:
-            total_score = weighted_sum / active_weight_sum
+            total_score = weighted_sum
 
         logger.info(f"{self.name}'s total score is: {round(total_score, 2)}")
         return {
@@ -143,7 +138,7 @@ if __name__ == "__main__":
     async def main():
         from services.db_service import fetch_company_details
 
-        fetched_company = await fetch_company_details(428, "auth0|6a0329e290f1881ac4d163b4")
+        fetched_company = await fetch_company_details(334, "auth0|6a0329e290f1881ac4d163b4")
         print(fetched_company)
 
         name = fetched_company.get('name')

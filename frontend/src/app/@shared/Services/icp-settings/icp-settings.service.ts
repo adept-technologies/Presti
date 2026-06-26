@@ -19,7 +19,19 @@ export class IcpSettingsService {
     return this.http.get<any>(this.baseUrl);
   }
 
-  saveSettings(data: any): Observable<any> {
-    return this.http.put<any>(this.baseUrl, {"icp": data});
+  saveSettings(data: any, name: string = 'Default', settingId?: number): Observable<any> {
+    return this.http.put<any>(this.baseUrl, {
+      "icp": data,
+      "name": name,
+      "setting_id": settingId
+    });
+  }
+
+  deleteSetting(settingId: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/${settingId}`);
+  }
+
+  activateSetting(settingId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${settingId}/activate`, {});
   }
 }

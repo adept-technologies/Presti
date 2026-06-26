@@ -1163,92 +1163,358 @@ async def mark_lead_positive(company_id: int, is_positive: bool) -> bool:
         if conn: await conn.close()
         return False
 
-async def fetch_engagement_metrics() -> Dict[str, Any]:
-    """Fetches all aggregated metrics for the engagement dashboard."""
-    logger.info("Fetching engagement metrics...")
+async def fetch_engagement_metrics(start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict[str, Any]:
+    """Fetches all aggregated metrics for the engagement dashboard.
+    
+    Args:
+        start_date: ISO date string (YYYY-MM-DD) for the start of the date range filter.
+        end_date:   ISO date string (YYYY-MM-DD) for the end of the date range filter.
+    
+    Returns a comprehensive dict with pipeline, outreach, ICP, people, geographic,
+    and temporal metrics. All metrics are global (not filtered by auth0_id).
+    """
+    logger.info("Fetching engagement metrics (start=%s, end=%s)...", start_date, end_date)
     conn = None
     try:
         conn = await asyncpg.connect(dsn=DB_URL)
-        
-        # 1. ICP Score Distribution
-        icp_query = "SELECT icp_score as score, COUNT(*) as count FROM companies WHERE icp_score IS NOT NULL GROUP BY icp_score ORDER BY icp_score"
-        icp_rows = await conn.fetch(icp_query)
+
+        # Parse ISO date strings to datetime.date objects for Postgres compatibility
+        start_date_parsed = None
+        end_date_parsed = None
+        if start_date:
+            try:
+                start_date_parsed = datetime.strptime(start_date, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+        if end_date:
+            try:
+                end_date_parsed = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+        # Build a reusable date-range WHERE clause for companies.created_at
+        date_params: List[Any] = []
+        date_clause = ""
+        if start_date_parsed and end_date_parsed:
+            date_clause = "WHERE created_at >= $1 AND created_at < ($2::date + interval '1 day')"
+            date_params = [start_date_parsed, end_date_parsed]
+        elif start_date_parsed:
+            date_clause = "WHERE created_at >= $1"
+            date_params = [start_date_parsed]
+        elif end_date_parsed:
+            date_clause = "WHERE created_at < ($1::date + interval '1 day')"
+            date_params = [end_date_parsed]
+
+        # Helper: apply date clause to an existing WHERE
+        def with_date(base_where: str, param_offset: int = 0) -> tuple:
+            """Returns (amended_query_fragment, amended_params)."""
+            if not date_params:
+                return base_where, []
+            shifted = []
+            fragment = base_where
+            for i, p in enumerate(date_params):
+                old = f"${i + 1}"
+                new = f"${i + 1 + param_offset}"
+                fragment = fragment.replace(old, new)
+                shifted.append(p)
+            return fragment, shifted
+
+        # -------------------------------------------------------------------
+        # 0. Summary counts (global totals)
+        # -------------------------------------------------------------------
+        summary_row = await conn.fetchrow("""
+            SELECT
+                (SELECT COUNT(*) FROM companies) AS total_companies,
+                (SELECT COUNT(*) FROM people)    AS total_people,
+                (SELECT COUNT(*) FROM emails_sent) AS total_emails_sent,
+                (SELECT COUNT(*) FROM companies WHERE positive_reply = TRUE)         AS total_positive_replies,
+                (SELECT COUNT(*) FROM people WHERE subscribed = FALSE)               AS total_unsubscribed,
+                (SELECT COUNT(*) FROM companies WHERE contacted_status = 'failed')   AS total_bounced
+        """)
+        summary = dict(summary_row) if summary_row else {}
+
+        # -------------------------------------------------------------------
+        # 1. ICP Score Distribution (bucketed for readability)
+        # -------------------------------------------------------------------
+        icp_dist_query = f"""
+            SELECT
+                CASE
+                    WHEN icp_score < 20  THEN '0-20'
+                    WHEN icp_score < 40  THEN '20-40'
+                    WHEN icp_score < 60  THEN '40-60'
+                    WHEN icp_score < 80  THEN '60-80'
+                    ELSE                      '80-100'
+                END AS bucket,
+                COUNT(*) AS count
+            FROM companies
+            {date_clause}
+            {'AND' if date_clause else 'WHERE'} icp_score IS NOT NULL
+            GROUP BY bucket
+            ORDER BY bucket
+        """
+        icp_rows = await conn.fetch(icp_dist_query, *date_params)
         icp_dist = [dict(r) for r in icp_rows]
 
-        # 2. Outreach KPIs
-        outreach_query = """
-        SELECT 
-            COUNT(*) as total_sent,
-            COUNT(*) FILTER (WHERE contacted_status IN ('opened', 'engaged', 'replied')) as opened,
-            COUNT(*) FILTER (WHERE contacted_status IN ('engaged', 'replied')) as clicked,
-            COUNT(*) FILTER (WHERE contacted_status = 'replied') as replied,
-            COUNT(*) FILTER (WHERE positive_reply = TRUE) as positive_replies,
-            COUNT(*) FILTER (WHERE contacted_status = 'opted_out') as unsubscribed,
-            COUNT(*) FILTER (WHERE contacted_status = 'failed') as bounced
-        FROM companies 
-        WHERE contacted_status NOT IN ('uncontacted', 'pending', 'requested')
+        # -------------------------------------------------------------------
+        # 2. Outreach KPIs (companies that have been contacted)
+        # -------------------------------------------------------------------
+        outreach_cond = "AND" if date_clause else "WHERE"
+        outreach_query = f"""
+            SELECT
+                COUNT(*) AS total_sent,
+                COUNT(*) FILTER (WHERE contacted_status IN ('opened', 'engaged', 'replied')) AS opened,
+                COUNT(*) FILTER (WHERE contacted_status IN ('engaged', 'replied'))           AS clicked,
+                COUNT(*) FILTER (WHERE contacted_status = 'replied')                         AS replied,
+                COUNT(*) FILTER (WHERE positive_reply = TRUE)                                AS positive_replies,
+                COUNT(*) FILTER (WHERE contacted_status = 'opted_out')                       AS unsubscribed,
+                COUNT(*) FILTER (WHERE contacted_status = 'failed')                          AS bounced
+            FROM companies
+            {date_clause}
+            {outreach_cond} contacted_status NOT IN ('uncontacted', 'pending', 'requested')
         """
-        outreach_row = await conn.fetchrow(outreach_query)
+        outreach_row = await conn.fetchrow(outreach_query, *date_params)
         outreach_kpis = dict(outreach_row) if outreach_row else {}
 
+        # -------------------------------------------------------------------
         # 3. Lead Lifecycle Funnel
-        lifecycle_query = """
-        SELECT contacted_status as stage, COUNT(*) as count 
-        FROM companies 
-        GROUP BY contacted_status
+        # -------------------------------------------------------------------
+        lifecycle_query = f"""
+            SELECT contacted_status AS stage, COUNT(*) AS count
+            FROM companies
+            {date_clause}
+            GROUP BY contacted_status
         """
-        lifecycle_rows = await conn.fetch(lifecycle_query)
+        lifecycle_rows = await conn.fetch(lifecycle_query, *date_params)
         lifecycle = {r['stage']: r['count'] for r in lifecycle_rows}
 
+        # -------------------------------------------------------------------
         # 4. Service Traction
-        service_query = """
-        SELECT service, COUNT(*) as count, 
-               COUNT(*) FILTER (WHERE contacted_status = 'replied') as replies
-        FROM companies 
-        WHERE service IS NOT NULL 
-        GROUP BY service
+        # -------------------------------------------------------------------
+        svc_cond = "AND" if date_clause else "WHERE"
+        service_query = f"""
+            SELECT service,
+                   COUNT(*) AS count,
+                   COUNT(*) FILTER (WHERE contacted_status = 'replied') AS replies
+            FROM companies
+            {date_clause}
+            {svc_cond} service IS NOT NULL
+            GROUP BY service
         """
-        service_rows = await conn.fetch(service_query)
+        service_rows = await conn.fetch(service_query, *date_params)
         service_traction = [dict(r) for r in service_rows]
 
+        # -------------------------------------------------------------------
         # 5. Response Rate by Company Size
-        size_query = """
-        SELECT 
-            CASE 
-                WHEN estimated_num_employees < 10 THEN '1-10'
-                WHEN estimated_num_employees < 50 THEN '11-50'
-                WHEN estimated_num_employees < 200 THEN '51-200'
-                ELSE '200+'
-            END as size_range,
-            COUNT(*) as total,
-            COUNT(*) FILTER (WHERE contacted_status = 'replied') as replies
-        FROM companies
-        WHERE estimated_num_employees IS NOT NULL
-        GROUP BY size_range
+        # -------------------------------------------------------------------
+        size_cond = "AND" if date_clause else "WHERE"
+        size_query = f"""
+            SELECT
+                CASE
+                    WHEN estimated_num_employees < 10  THEN '1-10'
+                    WHEN estimated_num_employees < 50  THEN '11-50'
+                    WHEN estimated_num_employees < 200 THEN '51-200'
+                    ELSE '200+'
+                END AS size_range,
+                COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE contacted_status = 'replied') AS replies
+            FROM companies
+            {date_clause}
+            {size_cond} estimated_num_employees IS NOT NULL
+            GROUP BY size_range
+            ORDER BY size_range
         """
-        size_rows = await conn.fetch(size_query)
+        size_rows = await conn.fetch(size_query, *date_params)
         size_metrics = [dict(r) for r in size_rows]
+
+        # -------------------------------------------------------------------
+        # 6. Geographic Breakdown (top 15 countries)
+        # -------------------------------------------------------------------
+        geo_cond = "AND" if date_clause else "WHERE"
+        geo_query = f"""
+            SELECT country,
+                   COUNT(*) AS total,
+                   COUNT(*) FILTER (WHERE contacted_status = 'replied') AS replies
+            FROM companies
+            {date_clause}
+            {geo_cond} country IS NOT NULL AND country <> ''
+            GROUP BY country
+            ORDER BY total DESC
+            LIMIT 15
+        """
+        geo_rows = await conn.fetch(geo_query, *date_params)
+        geo_breakdown = [dict(r) for r in geo_rows]
+
+        # -------------------------------------------------------------------
+        # 7. Industry Breakdown (unnested, top 15)
+        # -------------------------------------------------------------------
+        industry_cond = "AND" if date_clause else "WHERE"
+        industry_query = f"""
+            SELECT unnest(industries) AS industry,
+                   COUNT(*) AS total,
+                   COUNT(*) FILTER (WHERE contacted_status = 'replied') AS replies
+            FROM companies
+            {date_clause}
+            {industry_cond} industries IS NOT NULL
+            GROUP BY industry
+            ORDER BY total DESC
+            LIMIT 15
+        """
+        industry_rows = await conn.fetch(industry_query, *date_params)
+        industry_breakdown = [dict(r) for r in industry_rows]
+
+        # -------------------------------------------------------------------
+        # 8. Funding Stage Analysis
+        # -------------------------------------------------------------------
+        funding_cond = "AND" if date_clause else "WHERE"
+        funding_query = f"""
+            SELECT latest_funding_round AS stage,
+                   COUNT(*) AS total,
+                   ROUND(AVG(icp_score)::numeric, 1) AS avg_icp,
+                   COUNT(*) FILTER (WHERE contacted_status = 'replied') AS replies
+            FROM companies
+            {date_clause}
+            {funding_cond} latest_funding_round IS NOT NULL
+            GROUP BY stage
+            ORDER BY total DESC
+        """
+        funding_rows = await conn.fetch(funding_query, *date_params)
+        funding_breakdown = [dict(r) for r in funding_rows]
+
+        # -------------------------------------------------------------------
+        # 9. People Intelligence
+        # -------------------------------------------------------------------
+        people_summary_row = await conn.fetchrow("""
+            SELECT
+                COUNT(*) AS total_people,
+                COUNT(*) FILTER (WHERE subscribed = TRUE)      AS subscribed,
+                COUNT(*) FILTER (WHERE subscribed = FALSE)     AS unsubscribed,
+                COUNT(*) FILTER (WHERE has_replied = TRUE)     AS replied,
+                COUNT(*) FILTER (WHERE times_contacted > 0)   AS contacted
+            FROM people
+        """)
+        people_summary = dict(people_summary_row) if people_summary_row else {}
+
+        seniority_rows = await conn.fetch("""
+            SELECT seniority, COUNT(*) AS count
+            FROM people
+            WHERE seniority IS NOT NULL AND seniority <> ''
+            GROUP BY seniority
+            ORDER BY count DESC
+        """)
+        people_seniority = [dict(r) for r in seniority_rows]
+
+        dept_rows = await conn.fetch("""
+            SELECT unnest(departments) AS department, COUNT(*) AS count
+            FROM people
+            WHERE departments IS NOT NULL
+            GROUP BY department
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        people_departments = [dict(r) for r in dept_rows]
+
+        # -------------------------------------------------------------------
+        # 10. Email Sequence Performance (reply rate per sequence step)
+        # -------------------------------------------------------------------
+        seq_date_join = ""
+        seq_params: List[Any] = []
+        if date_params:
+            if start_date_parsed and end_date_parsed:
+                seq_date_join = "AND e.sent_at >= $1 AND e.sent_at < ($2::date + interval '1 day')"
+                seq_params = [start_date_parsed, end_date_parsed]
+            elif start_date_parsed:
+                seq_date_join = "AND e.sent_at >= $1"
+                seq_params = [start_date_parsed]
+            elif end_date_parsed:
+                seq_date_join = "AND e.sent_at < ($1::date + interval '1 day')"
+                seq_params = [end_date_parsed]
+
+        sequence_query = f"""
+            SELECT
+                e.sequence_number,
+                COUNT(*) AS total_sent,
+                COUNT(*) FILTER (WHERE c.contacted_status = 'replied') AS replies
+            FROM emails_sent e
+            JOIN companies c ON c.id = e.company_id
+            WHERE e.sequence_number IS NOT NULL
+            {seq_date_join}
+            GROUP BY e.sequence_number
+            ORDER BY e.sequence_number
+        """
+        seq_rows = await conn.fetch(sequence_query, *seq_params)
+        sequence_performance = [dict(r) for r in seq_rows]
+
+        # -------------------------------------------------------------------
+        # 11. ICP Sub-Score Averages (for radar chart)
+        # -------------------------------------------------------------------
+        icp_subscores_row = await conn.fetchrow("""
+            SELECT
+                ROUND(AVG(age_score)::numeric, 1)            AS avg_age,
+                ROUND(AVG(employee_count_score)::numeric, 1) AS avg_employee,
+                ROUND(AVG(funding_stage_score)::numeric, 1)  AS avg_funding,
+                ROUND(AVG(keyword_score)::numeric, 1)        AS avg_keyword,
+                ROUND(AVG(contactability_score)::numeric, 1) AS avg_contactability,
+                ROUND(AVG(geography_score)::numeric, 1)      AS avg_geography,
+                ROUND(AVG(industry_score)::numeric, 1)       AS avg_industry,
+                ROUND(AVG(total_score)::numeric, 1)          AS avg_total
+            FROM icp_scores
+        """)
+        icp_subscores = dict(icp_subscores_row) if icp_subscores_row else {}
+
+        # -------------------------------------------------------------------
+        # 12. Pipeline Over Time (monthly, last 12 months)
+        # -------------------------------------------------------------------
+        pipeline_time_query = f"""
+            SELECT
+                TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
+                COUNT(*) AS new_leads
+            FROM companies
+            {date_clause if date_clause else "WHERE created_at >= NOW() - interval '12 months'"}
+            GROUP BY DATE_TRUNC('month', created_at)
+            ORDER BY DATE_TRUNC('month', created_at) ASC
+        """
+        pipeline_params = date_params if date_params else []
+        pipeline_rows = await conn.fetch(pipeline_time_query, *pipeline_params)
+        pipeline_over_time = [dict(r) for r in pipeline_rows]
 
         await conn.close()
         return {
+            # Summary
+            "summary": summary,
+            # Existing
             "icp_score_distribution": icp_dist,
             "outreach_kpis": outreach_kpis,
             "lifecycle": lifecycle,
             "service_traction": service_traction,
-            "size_metrics": size_metrics
+            "size_metrics": size_metrics,
+            # New
+            "geo_breakdown": geo_breakdown,
+            "industry_breakdown": industry_breakdown,
+            "funding_breakdown": funding_breakdown,
+            "people_summary": people_summary,
+            "people_seniority": people_seniority,
+            "people_departments": people_departments,
+            "sequence_performance": sequence_performance,
+            "icp_subscores": icp_subscores,
+            "pipeline_over_time": pipeline_over_time,
         }
     except Exception as e:
         logger.error(f"Failed to fetch engagement metrics: {str(e)}")
         if conn: await conn.close()
         return {}
 
-async def fetch_icp_settings(pool, auth0_id: str):
-    query = "SELECT settings FROM icp_settings WHERE auth0_id = $1 LIMIT 1"
+async def fetch_icp_settings(pool, auth0_id: str, setting_id: Optional[int] = None) -> dict:
+    if setting_id:
+        query = "SELECT settings FROM icp_settings WHERE auth0_id = $1 AND id = $2 LIMIT 1"
+        args = [auth0_id, setting_id]
+    else:
+        query = "SELECT settings FROM icp_settings WHERE auth0_id = $1 AND is_active = TRUE LIMIT 1"
+        args = [auth0_id]
 
     conn = None
     try:
         async with pool.acquire(timeout=10.0) as conn:
-            row = await conn.fetchrow(query, auth0_id)
+            row = await conn.fetchrow(query, *args)
         if row and 'settings' in row and row['settings'] is not None:
             return json.loads(row['settings'])
         return {}
@@ -1260,8 +1526,77 @@ async def fetch_icp_settings(pool, auth0_id: str):
         return {}
 
 
+async def fetch_all_icp_settings(pool, auth0_id: str) -> list:
+    query = "SELECT id, name, is_active FROM icp_settings WHERE auth0_id = $1 ORDER BY created_at ASC"
+    try:
+        async with pool.acquire(timeout=10.0) as conn:
+            rows = await conn.fetch(query, auth0_id)
+        return [dict(row) for row in rows]
+    except Exception as e:
+        logger.error(f"Failed to fetch all icp settings for user {auth0_id}: {str(e)}")
+        return []
+
+
+async def delete_icp_setting(pool, auth0_id: str, setting_id: int) -> bool:
+    try:
+        async with pool.acquire(timeout=10.0) as conn:
+            async with conn.transaction():
+                # Check if the setting exists and get its active status
+                setting_row = await conn.fetchrow(
+                    "SELECT is_active FROM icp_settings WHERE auth0_id = $1 AND id = $2",
+                    auth0_id, setting_id
+                )
+                if not setting_row:
+                    return False
+                
+                # Delete the setting
+                await conn.execute(
+                    "DELETE FROM icp_settings WHERE auth0_id = $1 AND id = $2",
+                    auth0_id, setting_id
+                )
+                
+                # If deleted setting was active, activate another setting if available
+                if setting_row['is_active']:
+                    next_setting = await conn.fetchrow(
+                        "SELECT id FROM icp_settings WHERE auth0_id = $1 ORDER BY created_at ASC LIMIT 1",
+                        auth0_id
+                    )
+                    if next_setting:
+                        await conn.execute(
+                            "UPDATE icp_settings SET is_active = TRUE WHERE id = $1",
+                            next_setting['id']
+                        )
+                return True
+    except Exception as e:
+        logger.error(f"Failed to delete icp setting {setting_id} for user {auth0_id}: {str(e)}")
+        return False
+
+
+async def set_active_icp_setting(pool, auth0_id: str, setting_id: int) -> bool:
+    try:
+        async with pool.acquire(timeout=10.0) as conn:
+            async with conn.transaction():
+                # Verify that this setting belongs to this user
+                exists = await conn.fetchval(
+                    "SELECT 1 FROM icp_settings WHERE auth0_id = $1 AND id = $2",
+                    auth0_id, setting_id
+                )
+                if not exists:
+                    return False
+                
+                # Deactivate all and activate target
+                await conn.execute(
+                    "UPDATE icp_settings SET is_active = (id = $2) WHERE auth0_id = $1",
+                    auth0_id, setting_id
+                )
+                return True
+    except Exception as e:
+        logger.error(f"Failed to set active icp setting {setting_id} for user {auth0_id}: {str(e)}")
+        return False
+
+
 # TO DO => fix the format of geography
-async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
+async def upsert_icp_settings(pool, auth0_id: str, settings: dict, name: str = 'Default', setting_id: Optional[int] = None) -> Optional[dict]:
     resolved = {
         "age": [tuple(entry) for entry in settings.get("age", icp["age"])],
         "employee_count": [tuple(entry) for entry in settings.get("employee_count", icp["employee_count"])],
@@ -1289,26 +1624,73 @@ async def upsert_icp_settings(pool, auth0_id: str, settings: dict) -> bool:
         "weights": settings.get("weights", weights),
     }
 
-    """Insert or update ICP settings for a given auth0_id."""
-    query = """
-    INSERT INTO icp_settings (auth0_id, settings, created_at, updated_at)
-    VALUES ($1, $2::jsonb, NOW(), NOW())
-    ON CONFLICT (auth0_id)
-    DO UPDATE SET settings = EXCLUDED.settings, updated_at = NOW();
-    """
-
     conn = None
     try:
         async with pool.acquire(timeout=10.0) as conn:
-            await conn.execute(query, auth0_id, json.dumps(resolved))
-        logger.info("Updated ICP settings for %s", auth0_id)
-        return True
+            async with conn.transaction():
+                # If setting_id is provided, check if it exists and belongs to this user.
+                # If setting_id is not provided, check if we already have a setting with the same name.
+                # If so, we'll update it. Otherwise, insert new.
+                if setting_id:
+                    # Update existing by id
+                    # First deactivate all others if this one is active, or we can just make it active
+                    await conn.execute("UPDATE icp_settings SET is_active = FALSE WHERE auth0_id = $1", auth0_id)
+                    row = await conn.fetchrow(
+                        """
+                        UPDATE icp_settings 
+                        SET settings = $1::jsonb, name = $2, is_active = TRUE, updated_at = NOW() 
+                        WHERE auth0_id = $3 AND id = $4
+                        RETURNING id, name
+                        """,
+                        json.dumps(resolved), name, auth0_id, setting_id
+                    )
+                    if not row:
+                        # Fallback: maybe the ID didn't match auth0_id, let's insert a new one
+                        row = await conn.fetchrow(
+                            """
+                            INSERT INTO icp_settings (auth0_id, settings, name, is_active, created_at, updated_at)
+                            VALUES ($1, $2::jsonb, $3, TRUE, NOW(), NOW())
+                            RETURNING id, name
+                            """,
+                            auth0_id, json.dumps(resolved), name
+                        )
+                else:
+                    # No setting_id: check if name already exists for this user to update or insert
+                    existing = await conn.fetchrow(
+                        "SELECT id FROM icp_settings WHERE auth0_id = $1 AND name = $2",
+                        auth0_id, name
+                    )
+                    await conn.execute("UPDATE icp_settings SET is_active = FALSE WHERE auth0_id = $1", auth0_id)
+                    if existing:
+                        row = await conn.fetchrow(
+                            """
+                            UPDATE icp_settings
+                            SET settings = $1::jsonb, is_active = TRUE, updated_at = NOW()
+                            WHERE id = $2 AND auth0_id = $3
+                            RETURNING id, name
+                            """,
+                            json.dumps(resolved), existing['id'], auth0_id
+                        )
+                    else:
+                        row = await conn.fetchrow(
+                            """
+                            INSERT INTO icp_settings (auth0_id, settings, name, is_active, created_at, updated_at)
+                            VALUES ($1, $2::jsonb, $3, TRUE, NOW(), NOW())
+                            RETURNING id, name
+                            """,
+                            auth0_id, json.dumps(resolved), name
+                        )
+                
+                if row:
+                    logger.info("Updated/inserted ICP settings '%s' (ID: %s) for %s", row['name'], row['id'], auth0_id)
+                    return dict(row)
+        return None
     except asyncpg.PostgresError as e:
         logger.error(f"Database error while upserting icp settings: {str(e)}")
-        return False
+        return None
     except Exception as e:
         logger.error(f"Unexpected error while upserting icp settings: {str(e)}")
-        return False
+        return None
 
 if __name__ == "__main__":
     async def main():
@@ -1370,7 +1752,7 @@ if __name__ == "__main__":
         }
         async with asyncpg.create_pool(dsn=DB_URL, min_size=1, max_size=10) as pool:
             # x = await get_hiring_area("14.ai", pool)
-            await upsert_icp_settings(pool, "auth0|6a0329e290f1881ac4d163b4", settings)
-            pass
+            x = await fetch_icp_settings(pool, "auth0|6a0329e290f1881ac4d163b4", 1)
+            print(x)
 
     asyncio.run(main())

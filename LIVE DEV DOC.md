@@ -228,13 +228,3 @@ This section is a to-do list for me as the programmer.
 
 - Check if funded company is hiring and if hiring company has been funded
 - ADD A SPINNER/LOADER SHOWING RE-SCORING COMPANIES AFTER ICP CHANGE
-
-CREATE TABLE IF NOT EXISTS mock_icp_settings (
-id SERIAL PRIMARY KEY,
-auth0_id VARCHAR(255) UNIQUE NOT NULL,
-settings JSONB NOT NULL,
-created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-ALTER TABLE mock_icp_scores ADD COLUMN auth0_id VARCHAR(255);
