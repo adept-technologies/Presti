@@ -148,6 +148,10 @@ async def process_person(person: Dict[str, Any], pool) -> bool:
             subject=subject,
             content=content,
             unsubscribe_token=unsubscribe_token,
+            first_name=first_name,
+            last_name=last_name,
+            company_name=company_name,
+            sequence_number=sequence_number
         )
     except Exception as e:
         logger.error(
