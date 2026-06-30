@@ -57,9 +57,9 @@ jobs:
         run: |
           MISSING=""
 
-          [ -z "${{ secrets.AZURE_HOST }}" ] && MISSING="$MISSING AZURE_HOST"
-          [ -z "${{ secrets.AZURE_USER }}" ] && MISSING="$MISSING AZURE_USER"
-          [ -z "${{ secrets.AZURE_SSH_KEY }}" ] && MISSING="$MISSING AZURE_SSH_KEY"
+          [ -z "${{ secrets.CONTABO_HOST }}" ] && MISSING="$MISSING CONTABO_HOST"
+          [ -z "${{ secrets.CONTABO_USER }}" ] && MISSING="$MISSING CONTABO_USER"
+          [ -z "${{ secrets.CONTABO_SSH_KEY }}" ] && MISSING="$MISSING CONTABO_SSH_KEY"
           [ -z "${{ secrets.GHCR_TOKEN }}" ] && MISSING="$MISSING GHCR_TOKEN"
 
           if [ -n "$MISSING" ]; then
@@ -136,9 +136,9 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
 
         with:
-          host: ${{ secrets.AZURE_HOST }}
-          username: ${{ secrets.AZURE_USER }}
-          key: ${{ secrets.AZURE_SSH_KEY }}
+          host: ${{ secrets.CONTABO_HOST }}
+          username: ${{ secrets.CONTABO_USER }}
+          key: ${{ secrets.CONTABO_SSH_KEY }}
           port: 22
 
           script: |
