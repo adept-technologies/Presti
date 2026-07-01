@@ -2,35 +2,33 @@ services:
   db:
     image: postgres:17
     restart: always
-    ports:
-      - "2345:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_staging:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: mock_lead_gen_db
-      POSTGRES_USER: mock_lead_gen_user
-      POSTGRES_PASSWORD: mock_lead_gen_password
+      POSTGRES_DB: lead_gen_staging_db
+      POSTGRES_USER: lead_gen_staging_user
+      POSTGRES_PASSWORD: lead_gen_staging_password
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U mock_lead_gen_user -d mock_lead_gen_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U lead_gen_staging_user -d lead_gen_staging_db" ]
       interval: 1m30s
       timeout: 30s
       retries: 5
       start_period: 30s
     networks:
-      - lead-gen-network
+      - lead-gen-staging-network
 
   backend:
     image: ${IMAGE_REF} 
     pull_policy: always
     ports:
-      - "5050:5050"
+      - "5051:5050"
     env_file:
-      - ./backend/.env          # Injects ALL vars into the container
+      - ./backend/.env.staging          # Injects ALL vars into the container
     environment:
       # These override anything in .env if needed
-      DATABASE_URL: postgresql://mock_lead_gen_user:mock_lead_gen_password@db:5432/mock_lead_gen_db
+      DATABASE_URL: postgresql://lead_gen_staging_user:lead_gen_staging_password@db:5432/lead_gen_staging_db
       GOOGLE_APPLICATION_CREDENTIALS: /app/service-account.json
-      API_URL: http://192.168.1.250:5050
+      API_URL: http://75.119.133.12:5051
       AUTH0_DOMAIN: dev-2685h5q7efjt6peh.us.auth0.com
       AUTH0_API_AUDIENCE: https://api.presti
     volumes:
@@ -40,13 +38,13 @@ services:
         condition: service_healthy
     restart: always
     networks:
-      - lead-gen-network
+      - lead-gen-staging-network
 
 networks:
-  lead-gen-network:
+  lead-gen-staging-network:
     driver: bridge
 
 volumes:
-  pgdata:
+  pgdata_staging:
     external: true
-    name: ai-ml-lead-gen_mock_lead_gen_pgdata
+    name: lead_gen_staging_pgdata

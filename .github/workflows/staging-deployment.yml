@@ -98,10 +98,10 @@ jobs:
 
       - name: Deploy with Docker Compose
         run: |
-          cd /home/administrator/AI-ML-Lead-Gen
+          cd ~/presti-staging
           IMAGE_REF="${{ needs.build-and-push.outputs.image_ref }}" \
           docker compose \
-            -p mock-lead-gen \
+            -p lead-gen-staging \
             -f docker-compose.staging.yml \
             up -d --force-recreate --remove-orphans
 
@@ -122,11 +122,11 @@ jobs:
     steps:
       - name: Check backend container status
         run: |
-          cd /home/administrator/AI-ML-Lead-Gen
+          cd ~/presti-staging
 
           CONTAINER_ID=$(IMAGE_REF="${{ needs.build-and-push.outputs.image_ref }}" \
             docker compose \
-              -p mock-lead-gen \
+              -p lead-gen-staging \
               -f docker-compose.staging.yml \
               ps -q backend)
 
@@ -149,11 +149,11 @@ jobs:
         # Print last 70 lines so startup errors and listening port
         # are always visible in the Actions run
         run: |
-          cd /home/administrator/AI-ML-Lead-Gen
+          cd ~/presti-staging
 
           CONTAINER_ID=$(IMAGE_REF="${{ needs.build-and-push.outputs.image_ref }}" \
             docker compose \
-              -p mock-lead-gen \
+              -p lead-gen-staging \
               -f docker-compose.staging.yml \
               ps -q backend)
 
@@ -166,14 +166,14 @@ jobs:
 
       - name: Health check
         run: |
-          curl --fail --retry 10 --retry-delay 5 --retry-connrefused http://localhost:5050/health \
+          curl --fail --retry 10 --retry-delay 5 --retry-connrefused http://localhost:5051/health \
             && echo "Health check passed" \
             || (echo "Health check failed" && exit 1)
 
   # ============================================================
   # 4. OWASP ZAP DAST SCAN (FULL)
   #    Runs on the self-hosted runner to scan the application
-  #    actively running on localhost:5050.
+  #    actively running on localhost:5051.
   # ============================================================
   zap-scan-staging:
     name: OWASP ZAP Full Scan (Staging)
@@ -193,7 +193,7 @@ jobs:
           docker run --rm --network="host" -u root \
             -v $(pwd):/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
-            -t http://localhost:5050 \
+            -t http://localhost:5051 \
             -I \
             -J report_json.json || EXIT_CODE=$?
             

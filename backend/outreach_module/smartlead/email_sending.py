@@ -79,18 +79,18 @@ async def connect_email_accounts(campaign_id, email_account_ids, client):
     return r.json()
         
 # 4. ADD LEADS (max 400 per request — loop for larger lists) 
-#async def add_leads(campaign_id, leads, client): 
-    #logger.info("Adding leads...")
-    #url = f"{BASE_URL}/campaigns/{campaign_id}/leads"
-    #params = {"api_key": API_KEY}
-    #r = await client.post(
-        #url, 
-        #json={"lead_list": leads}, 
-        #params=params,
-        #headers=headers
-    #) 
-    #r.raise_for_status()
-    #return r.json()
+async def add_leads(campaign_id, leads, client): 
+    logger.info("Adding leads...")
+    url = f"{BASE_URL}/campaigns/{campaign_id}/leads"
+    params = {"api_key": API_KEY}
+    r = await client.post(
+        url, 
+        json={"lead_list": leads}, 
+        params=params,
+        headers=headers
+    ) 
+    r.raise_for_status()
+    return r.json()
         
 # 5. CONFIGURE SCHEDULE 
 #async def configure_schedule(campaign_id, client): 
@@ -172,13 +172,13 @@ if __name__ == "__main__":
                 lead_payload = {
                     "lead_list": [
                         {
-                            "email": "lead@company.com",
-                            "first_name": "John",
-                            "last_name": "Smith",
-                            "company_name": "Acme Corp",
+                            "email": "m10mathenge@gmail.com",
+                            "first_name": "Mark",
+                            "last_name": "Mathenge",
+                            "company_name": "Mathenge Ltd",
                             "custom_fields": {
-                                "personalized_subject": "Quick question about Acme Corp",
-                                "personalized_body": "<p>Hi John, I noticed your company...</p>"
+                                "personalized_subject": "Quick question about Mathenge Ltd",
+                                "personalized_body": "<p>Hi Mark, I noticed your company...</p>"
                             }
                         }
                     ]
