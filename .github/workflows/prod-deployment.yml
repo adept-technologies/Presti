@@ -171,16 +171,16 @@ jobs:
 
             #echo ""
             #echo "Taking database backup..."
-            #mkdir -p ~/presti-prod/db_backups
-            #docker compose -p lead-gen -f docker-compose.prod.yml exec -T db \
-              #pg_dump -U lead_gen_user lead_gen_db \
-              #> ~/presti-prod/db_backups/backup_${SHA}.sql
+            #mkdir -p ~/presti/db_backups
+            #docker compose -p lead-gen-prod -f docker-compose.prod.yml exec -T db \
+              #pg_dump -U lead_gen_prod_user lead_gen_prod_db \
+              #> ~/presti/db_backups/backup_${SHA}.sql
             #echo "Backup saved: db_backups/backup_${SHA}.sql"
 
             echo ""
             echo "Saving rollback image..."
 
-            cd ~/presti-prod
+            cd ~/presti
 
             CURRENT_CONTAINER=$(IMAGE_REF="$IMAGE_REF" docker compose \
               -p lead-gen-prod \
@@ -263,7 +263,7 @@ jobs:
           echo "Rollback Instructions:"
           echo ""
 
-          echo "cd ~/presti-prod"
+          echo "cd ~/presti"
 
           echo ""
           echo "ROLLBACK=\$(cat rollback_image.txt)"

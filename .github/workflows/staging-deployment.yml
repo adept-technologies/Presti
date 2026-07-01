@@ -98,7 +98,7 @@ jobs:
 
       - name: Deploy with Docker Compose
         run: |
-          cd ~/presti-staging
+          cd ~/presti
           IMAGE_REF="${{ needs.build-and-push.outputs.image_ref }}" \
           docker compose \
             -p lead-gen-staging \
@@ -122,7 +122,7 @@ jobs:
     steps:
       - name: Check backend container status
         run: |
-          cd ~/presti-staging
+          cd ~/presti
 
           CONTAINER_ID=$(IMAGE_REF="${{ needs.build-and-push.outputs.image_ref }}" \
             docker compose \
@@ -149,7 +149,7 @@ jobs:
         # Print last 70 lines so startup errors and listening port
         # are always visible in the Actions run
         run: |
-          cd ~/presti-staging
+          cd ~/presti
 
           CONTAINER_ID=$(IMAGE_REF="${{ needs.build-and-push.outputs.image_ref }}" \
             docker compose \
