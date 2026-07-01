@@ -274,7 +274,7 @@ def dedupe_people(people: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 async def main(
     pool,
     organization_ids: Optional[List[str]] = None,
-    limit: int = 30,
+    limit: int = 90,
 ):
     logger.info("Starting daily outreach run")
 
