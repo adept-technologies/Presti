@@ -4,8 +4,6 @@ services:
     networks:
       - lead-gen-prod-network
     restart: always
-    ports:
-      - "2345:5432"
     volumes:
       - pgdata_prod:/var/lib/postgresql/data
     environment:
@@ -27,7 +25,7 @@ services:
     ports:
       - "5050:5050"
     env_file:
-      - ./backend/.env          # Injects ALL vars (incl. DATABASE_URL) into the container
+      - ./backend/.env.prod          # Injects ALL vars (incl. DATABASE_URL) into the container
     environment:
       # These override anything in .env if needed
       DATABASE_URL: postgresql://lead_gen_prod_user:lead_gen_prod_password@db:5432/lead_gen_prod_db

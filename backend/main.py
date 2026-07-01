@@ -54,8 +54,7 @@ allowed_origins = [
     "http://localhost:5050",
     "http://127.0.0.1:4200",
     "http://127.0.0.1:5050",
-    "http://20.121.43.237",
-    "http://192.168.1.250:5050"
+    "http://75.119.133.12"
     "http://lead-gen.adept-techno.co.ke",
     "https://lead-gen.adept-techno.co.ke"
 ]
