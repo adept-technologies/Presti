@@ -183,7 +183,7 @@ jobs:
             cd ~/AI-ML-Lead-Gen
 
             CURRENT_CONTAINER=$(IMAGE_REF="$IMAGE_REF" docker compose \
-              -p lead-gen \
+              -p lead-gen-prod \
               -f docker-compose.prod.yml \
               ps -q backend)
 
@@ -199,7 +199,7 @@ jobs:
             echo "Deploying application..."
 
             IMAGE_REF="$IMAGE_REF" docker compose \
-              -p lead-gen \
+              -p lead-gen-prod \
               -f docker-compose.prod.yml \
               up -d --force-recreate --remove-orphans
 
@@ -271,6 +271,6 @@ jobs:
           echo ""
 
           echo "IMAGE_REF=\$ROLLBACK docker compose \\"
-          echo "  -p lead-gen \\"
+          echo "  -p lead-gen-prod \\"
           echo "  -f docker-compose.prod.yml \\"
           echo "  up -d --force-recreate --remove-orphans"
